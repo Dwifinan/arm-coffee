@@ -2,173 +2,146 @@
 
 namespace App\Http\Controllers;
 
-use Illuminate\Http\Request;
 use App\Models\Menu;
 use App\Models\Bahan;
-use App\Models\MenuDetail;
+use App\Models\Komposisi;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Validation\Rule;
 
 class MenuController extends Controller
 {
-    /**
-     * Menampilkan daftar semua menu.
-     */
-    public function index()
-    {
-        $menus = Menu::all();
-        return view('pages.menu', compact('menus'));
-    }
+    // ==================================================
+    // WEB METHODS (Untuk form, view HTML, dan CRUD utama)
+    // ==================================================
 
     /**
-     * Menampilkan formulir untuk menambah menu baru.
+     * Menampilkan form untuk membuat menu baru (dan komposisi).
      */
     public function create()
     {
-        $bahans = Bahan::orderBy('nama', 'asc')->get();
+        $bahans = Bahan::all();
         return view('pages.create_menu', compact('bahans'));
     }
 
     /**
-     * Menyimpan menu dan detail bahan yang digunakan.
+     * Menyimpan menu baru dan komposisinya menggunakan database transaction.
      */
     public function store(Request $request)
     {
+        // 1. Validasi Data
         $request->validate([
-            'nama' => 'required|string|max:50|unique:menu',
-            'harga' => 'required|integer|min:1000',
-            'bahan_id' => 'required|array',
-            'bahan_id.*' => 'nullable|exists:bahan,id',
-            'jumlah_bahan' => 'required|array',
-            'jumlah_bahan.*' => 'nullable|integer|min:1',
-        ], [
-            'nama.unique' => 'Nama menu sudah ada.',
-            'bahan_id.required' => 'Menu harus memiliki minimal satu bahan baku.',
+            'nama' => 'required|string|max:100|unique:menu,nama',
+            'harga' => 'required|numeric|min:1000',
+            'bahan_id' => 'required|array|min:1',
+            'bahan_id.*' => 'required|exists:bahan,id',
+            'jumlah_bahan' => 'required|array|min:1',
+            'jumlah_bahan.*' => 'required|numeric|min:1',
         ]);
 
         try {
             DB::beginTransaction();
+
+            // 2. Simpan Data Menu Utama
             $menu = Menu::create([
                 'nama' => $request->nama,
                 'harga' => $request->harga,
+                'tersedia' => 1,
             ]);
 
-            $menuDetails = [];
-            foreach ($request->bahan_id as $index => $bahanId) {
-                $jumlah = $request->jumlah_bahan[$index];
+            // 3. Simpan Komposisi Menu (Details)
+            foreach ($request->bahan_id as $index => $bahan_id) {
+                if (isset($request->jumlah_bahan[$index])) {
+                    // Cek duplikasi bahan_id dalam satu menu request.
+                    if (in_array($bahan_id, array_slice($request->bahan_id, 0, $index))) {
+                         DB::rollBack();
+                         return redirect()->back()->withInput()->with('error', 'Gagal menyimpan menu: Terdapat bahan baku ganda yang dipilih.');
+                    }
 
-                if (!empty($bahanId) && $jumlah >= 1) {
-                    $menuDetails[] = [
+                    Komposisi::create([
                         'menu_id' => $menu->id,
-                        'bahan_id' => $bahanId,
-                        'jumlah' => $jumlah,
-                        'created_at' => now(),
-                        'updated_at' => now(),
-                    ];
+                        'bahan_id' => $bahan_id,
+                        'jumlah_bahan' => $request->jumlah_bahan[$index],
+                        'satuan' => '', // Kolom 'satuan' di Model Komposisi.php
+                    ]);
                 }
             }
 
-            if (empty($menuDetails)) {
-                 DB::rollBack();
-                 return redirect()->back()
-                    ->withInput()
-                    ->with('error', 'Gagal menyimpan menu. Pastikan Anda memilih bahan dan memasukkan jumlah yang valid.');
-            }
-
-            MenuDetail::insert($menuDetails);
             DB::commit();
 
             return redirect()->route('menu.index')
-                ->with('success', 'Menu "' . $menu->nama . '" berhasil ditambahkan.');
+                ->with('success', 'Menu "' . $menu->nama . '" dan komposisinya berhasil ditambahkan.');
 
         } catch (\Exception $e) {
             DB::rollBack();
             return redirect()->back()
                 ->withInput()
-                ->with('error', 'Gagal menambahkan menu. Error: ' . $e->getMessage());
+                ->with('error', 'Gagal menyimpan menu dan komposisi: ' . $e->getMessage());
         }
     }
 
-    // =========================================================
-    // BARU: SHOW (DETAIL)
-    // =========================================================
     /**
-     * Menampilkan detail menu beserta bahan baku yang digunakan.
+     * Menampilkan detail menu.
      */
     public function show(Menu $menu)
     {
-        // Memuat relasi details dan bahan yang terhubung
-        $menu->load('details.bahan');
         return view('pages.menu_detail', compact('menu'));
     }
 
-    // =========================================================
-    // BARU: EDIT DAN UPDATE
-    // =========================================================
     /**
-     * Menampilkan formulir edit menu.
+     * Menampilkan form edit menu (dan komposisi).
      */
     public function edit(Menu $menu)
     {
-        // Muat relasi detail menu dan bahan baku yang digunakan
-        $menu->load('details');
-        // Ambil semua bahan yang tersedia untuk dropdown
-        $bahans = Bahan::orderBy('nama', 'asc')->get();
-
+        $bahans = Bahan::all();
         return view('pages.edit_menu', compact('menu', 'bahans'));
     }
 
     /**
-     * Memperbarui menu dan detail bahan yang digunakan.
+     * Memperbarui menu dan komposisinya menggunakan database transaction.
      */
     public function update(Request $request, Menu $menu)
     {
-        // 1. Validasi Data
         $request->validate([
-            // Nama harus unik, kecuali untuk menu yang sedang di-edit
-            'nama' => ['required', 'string', 'max:50', Rule::unique('menu')->ignore($menu->id)],
-            'harga' => 'required|integer|min:1000',
-            'bahan_id' => 'required|array',
-            'bahan_id.*' => 'nullable|exists:bahan,id',
-            'jumlah_bahan' => 'required|array',
-            'jumlah_bahan.*' => 'nullable|integer|min:1',
+            'nama' => 'required|string|max:100|unique:menu,nama,' . $menu->id,
+            'harga' => 'required|numeric|min:1000',
+            'bahan_id' => 'nullable|array',
+            'bahan_id.*' => 'required|exists:bahan,id',
+            'jumlah_bahan' => 'nullable|array',
+            'jumlah_bahan.*' => 'required|numeric|min:1',
         ]);
 
         try {
             DB::beginTransaction();
 
-            // 2. Update Menu Utama
+            // 2. Update Data Menu Utama
             $menu->update([
                 'nama' => $request->nama,
                 'harga' => $request->harga,
             ]);
 
-            // 3. Hapus detail lama, dan masukkan yang baru
+            // 3. Hapus semua komposisi lama
             $menu->details()->delete();
 
-            $menuDetails = [];
-            foreach ($request->bahan_id as $index => $bahanId) {
-                $jumlah = $request->jumlah_bahan[$index];
+            // 4. Simpan Komposisi Menu yang baru
+            if ($request->bahan_id) {
+                foreach ($request->bahan_id as $index => $bahan_id) {
+                    if (isset($request->jumlah_bahan[$index])) {
+                        // Cek duplikasi bahan_id dalam satu menu request.
+                        if (in_array($bahan_id, array_slice($request->bahan_id, 0, $index))) {
+                            DB::rollBack();
+                            return redirect()->back()->withInput()->with('error', 'Gagal memperbarui menu: Terdapat bahan baku ganda yang dipilih.');
+                        }
 
-                if (!empty($bahanId) && $jumlah >= 1) {
-                    $menuDetails[] = [
-                        'menu_id' => $menu->id,
-                        'bahan_id' => $bahanId,
-                        'jumlah' => $jumlah,
-                        'created_at' => now(),
-                        'updated_at' => now(),
-                    ];
+                        Komposisi::create([
+                            'menu_id' => $menu->id,
+                            'bahan_id' => $bahan_id,
+                            'jumlah_bahan' => $request->jumlah_bahan[$index],
+                            'satuan' => '',
+                        ]);
+                    }
                 }
             }
 
-            if (empty($menuDetails)) {
-                 DB::rollBack();
-                 return redirect()->back()
-                    ->withInput()
-                    ->with('error', 'Gagal menyimpan menu. Menu harus memiliki minimal satu bahan baku yang valid.');
-            }
-
-            MenuDetail::insert($menuDetails);
             DB::commit();
 
             return redirect()->route('menu.index')
@@ -178,27 +151,110 @@ class MenuController extends Controller
             DB::rollBack();
             return redirect()->back()
                 ->withInput()
-                ->with('error', 'Gagal memperbarui menu. Error: ' . $e->getMessage());
+                ->with('error', 'Gagal memperbarui menu: ' . $e->getMessage());
         }
     }
 
-    // =========================================================
-    // BARU: DESTROY (HAPUS)
-    // =========================================================
     /**
-     * Menghapus menu dan semua detail bahan terkait.
+     * Menghapus menu dan komposisinya menggunakan transaction.
+     * FIX: Menerima $id untuk mengatasi isu Route Model Binding pada rute API kustom.
      */
-    public function destroy(Menu $menu)
+    public function destroy($id)
     {
-        try {
-            // Karena relasi sudah diatur ON DELETE CASCADE di database (menu_detail),
-            // menghapus menu juga akan menghapus detailnya.
-            $menu->delete();
-            return redirect()->route('menu.index')
-                ->with('success', 'Menu "' . $menu->nama . '" berhasil dihapus.');
-        } catch (\Exception $e) {
-            return redirect()->back()
-                ->with('error', 'Gagal menghapus menu. Error: ' . $e->getMessage());
+        $menu = Menu::find($id); // Cari model secara manual
+
+        if (!$menu) {
+            return response()->json(['message' => 'Data tidak ditemukan'], 404);
         }
+
+        try {
+            DB::beginTransaction();
+            $namaMenu = $menu->nama;
+
+            // Hapus komposisi terlebih dahulu
+            $menu->details()->delete(); //
+
+            // Hapus menu utama
+            $menu->delete();
+            DB::commit();
+
+            return response()->json([
+                'message' => "Menu '$namaMenu' berhasil dihapus"
+            ]);
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return response()->json([
+                'message' => 'Gagal menghapus menu: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
+    // ==================================================
+    // API METHODS (Untuk DataTables AJAX)
+    // ==================================================
+
+    /**
+     * Mengambil semua menu (API untuk DataTables).
+     */
+    public function getMenuData()
+    {
+        $data = Menu::orderBy('id', 'DESC')->get();
+
+        return response()->json([
+            'data' => $data
+        ]);
+    }
+
+    /**
+     * Mengambil detail menu (API)
+     */
+    public function showApi($id)
+    {
+        $menu = Menu::find($id);
+        if (!$menu) {
+            return response()->json(['message' => 'Data tidak ditemukan'], 404);
+        }
+        return response()->json(['data' => $menu]);
+    }
+
+    /**
+     * Menyimpan menu (API modal lama)
+     */
+    public function storeApi(Request $request)
+    {
+        $request->validate([
+            'nama' => 'required',
+            'harga' => 'required|numeric|min:0',
+            'tersedia' => 'required|in:0,1',
+        ]);
+        $menu = Menu::create([
+            'nama' => $request->nama,
+            'harga' => $request->harga,
+            'tersedia' => $request->tersedia,
+        ]);
+        return response()->json([
+            'message' => 'Menu berhasil ditambahkan',
+            'data' => $menu
+        ]);
+    }
+
+    /**
+     * Memperbarui menu (API modal lama)
+     */
+    public function updateApi(Request $request, $id)
+    {
+        $menu = Menu::find($id);
+        if (!$menu) {
+            return response()->json(['message' => 'Data tidak ditemukan'], 404);
+        }
+        $menu->update([
+            'nama' => $request->nama,
+            'harga' => $request->harga,
+            'tersedia' => $request->tersedia,
+        ]);
+        return response()->json([
+            'message' => 'Menu berhasil diupdate',
+            'data' => $menu
+        ]);
     }
 }

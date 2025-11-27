@@ -6,12 +6,18 @@ use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\Hash;
 use App\Models\User;
 use App\Models\Bahan;
+use App\Models\Menu;
+use App\Models\Komposisi;
 
 class DatabaseSeeder extends Seeder
 {
     public function run(): void
     {
-        // --- Seed User ---
+        /**
+         * =============================================
+         *  1. SEED USER
+         * =============================================
+         */
         User::create([
             'username' => 'owner',
             'password' => Hash::make('owner123'),
@@ -24,7 +30,13 @@ class DatabaseSeeder extends Seeder
             'role' => 'staff',
         ]);
 
-        // --- Seed Bahan (satuan terkecil) ---
+
+        /**
+         * =============================================
+         *  2. SEED BAHAN
+         *  (tanpa harga_satuan karena dihitung otomatis)
+         * =============================================
+         */
         $bahans = [
             [
                 'kode' => 'B001',
@@ -100,9 +112,105 @@ class DatabaseSeeder extends Seeder
             ],
         ];
 
-        // Insert tanpa harga_satuan
         foreach ($bahans as $bahan) {
             Bahan::create($bahan);
+        }
+
+
+        /**
+         * =============================================
+         *  3. SEED MENU
+         * =============================================
+         */
+
+        $menus = [
+            ['nama' => 'Es Kopi Susu', 'harga' => 15000],
+            ['nama' => 'Kopi Tubruk', 'harga' => 10000],
+            ['nama' => 'Teh Manis', 'harga' => 5000],
+            ['nama' => 'Roti Coklat', 'harga' => 8000],
+        ];
+
+        foreach ($menus as $menu) {
+            Menu::create($menu);
+        }
+
+
+        /**
+         * =============================================
+         *  4. SEED KOMPOSISI MENU
+         *  (diambil dari id yang sudah dibuat)
+         * =============================================
+         */
+
+        // Ambil ID bahan berdasarkan kode
+        $bahan = Bahan::pluck('id', 'kode');
+        $menu  = Menu::pluck('id', 'nama');
+
+        $komposisi = [
+            // === Es Kopi Susu ===
+            [
+                'menu' => 'Es Kopi Susu',
+                'bahan' => 'B002',
+                'jumlah' => 15,
+                'satuan' => 'g'
+            ],
+            [
+                'menu' => 'Es Kopi Susu',
+                'bahan' => 'B003',
+                'jumlah' => 50,
+                'satuan' => 'ml'
+            ],
+            [
+                'menu' => 'Es Kopi Susu',
+                'bahan' => 'B001',
+                'jumlah' => 10,
+                'satuan' => 'g'
+            ],
+
+            // === Kopi Tubruk ===
+            [
+                'menu' => 'Kopi Tubruk',
+                'bahan' => 'B002',
+                'jumlah' => 10,
+                'satuan' => 'g'
+            ],
+
+            // === Teh Manis ===
+            [
+                'menu' => 'Teh Manis',
+                'bahan' => 'B004',
+                'jumlah' => 1,
+                'satuan' => 'pcs'
+            ],
+            [
+                'menu' => 'Teh Manis',
+                'bahan' => 'B001',
+                'jumlah' => 15,
+                'satuan' => 'g'
+            ],
+
+            // === Roti Coklat ===
+            [
+                'menu' => 'Roti Coklat',
+                'bahan' => 'B007',
+                'jumlah' => 1,
+                'satuan' => 'pcs'
+            ],
+            [
+                'menu' => 'Roti Coklat',
+                'bahan' => 'B008',
+                'jumlah' => 20,
+                'satuan' => 'g'
+            ],
+        ];
+
+        foreach ($komposisi as $k) {
+            Komposisi::create([
+                'menu_id'  => $menu[$k['menu']],
+                'bahan_id' => $bahan[$k['bahan']],
+                'jumlah_bahan' => $k['jumlah'],
+                'satuan' => $k['satuan'],
+            ]);
         }
     }
 }

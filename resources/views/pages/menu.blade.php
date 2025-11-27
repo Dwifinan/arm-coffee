@@ -1,150 +1,119 @@
+
 @extends('components.layout')
 
 @section('content')
-<div class="pagetitle">
-    <h1>Menu Produk</h1>
-    <nav>
-        <ol class="breadcrumb">
-            <li class="breadcrumb-item"><a href="{{ url('/') }}">Home</a></li>
-            <li class="breadcrumb-item active">Menu</li>
-        </ol>
-    </nav>
-</div>
 
-<section class="section">
-    <div class="card">
-        <div class="card-body">
+<style>
+    div.dataTables_filter {
+        margin-bottom: 18px !important;
+    }
+</style>
 
-            <div class="d-flex justify-content-between align-items-center mb-3">
-                <h5 class="card-title mb-0">Daftar Menu</h5>
+<div class="card">
+    <div class="card-title d-flex justify-content-between align-items-center px-3 pt-3">
+        <h5 class="m-0">Daftar Menu</h5>
 
-                {{-- Tombol Tambah Menu --}}
-                <a href="{{ route('menu.create') }}" class="btn btn-primary btn-sm">
-                    <i class="bi bi-plus-circle"></i> Tambah Menu
-                </a>
-            </div>
-
-            <p>Halaman ini menampilkan semua menu yang tersedia dan harga jualnya.</p>
-
-            @if(session('success'))
-                <div class="alert alert-success alert-dismissible fade show" role="alert">
-                    {{ session('success') }}
-                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-                </div>
-            @endif
-
-            @if(session('error'))
-                <div class="alert alert-danger alert-dismissible fade show" role="alert">
-                    {{ session('error') }}
-                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-                </div>
-            @endif
-
-            <table class="table table-striped">
-                <thead>
-                    <tr>
-                        <th>#</th>
-                        <th>Nama Menu</th>
-                        <th>Harga Jual</th>
-                        <th style="width: 15%">Aksi</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    @forelse ($menus as $menu)
-                    <tr>
-                        <td>{{ $loop->iteration }}</td>
-                        <td>{{ $menu->nama }}</td>
-                        <td>Rp {{ number_format($menu->harga, 0, ',', '.') }}</td>
-                        <td>
-                            {{-- Tombol Detail --}}
-                            <a href="{{ route('menu.show', $menu->id) }}" class="btn btn-info btn-sm text-white" title="Lihat Detail">
-                                <i class="bi bi-eye"></i>
-                            </a>
-
-                            {{-- Tombol Edit --}}
-                            <a href="{{ route('menu.edit', $menu->id) }}" class="btn btn-warning btn-sm" title="Edit Menu">
-                                <i class="bi bi-pencil"></i>
-                            </a>
-
-                            {{-- Tombol Hapus (Trigger Modal) --}}
-                            <button type="button" class="btn btn-danger btn-sm delete-menu-btn" data-id="{{ $menu->id }}" data-nama="{{ $menu->nama }}" title="Hapus Menu">
-                                <i class="bi bi-trash"></i>
-                            </button>
-
-                            {{-- Form tersembunyi untuk proses penghapusan --}}
-                            <form id="delete-form-{{ $menu->id }}" action="{{ route('menu.destroy', $menu->id) }}" method="POST" style="display: none;">
-                                @csrf
-                                @method('DELETE')
-                            </form>
-                        </td>
-                    </tr>
-                    @empty
-                    <tr>
-                        <td colspan="4" class="text-center">Belum ada data Menu. Silakan tambahkan menu baru.</td>
-                    </tr>
-                    @endforelse
-                </tbody>
-            </table>
-        </div>
+        {{-- Mengarahkan ke form tambah menu (route menu.create) --}}
+        <a href="{{ route('menu.create') }}" class="btn btn-primary">
+            <i class="bi bi-plus-circle"></i> Tambah Menu Baru
+        </a>
     </div>
-</section>
 
-{{-- MODAL KONFIRMASI HAPUS --}}
-<div class="modal fade" id="deleteMenuConfirmationModal" tabindex="-1" aria-labelledby="deleteMenuConfirmationModalLabel" aria-hidden="true">
-    <div class="modal-dialog">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title" id="deleteMenuConfirmationModalLabel">Konfirmasi Penghapusan Menu</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-            </div>
-            <div class="modal-body">
-                Apakah Anda yakin ingin menghapus menu **<span id="modal-menu-nama"></span>**?
-                Semua detail bahan terkait juga akan dihapus. Tindakan ini tidak dapat dibatalkan.
-            </div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Batal</button>
-                <button type="button" class="btn btn-danger" id="confirmDeleteMenuButton">Hapus Permanen</button>
-            </div>
-        </div>
+    <div class="card-body p-3">
+        <table id="menuTable" class="display table table-bordered" style="width: 100%">
+            <thead class="table-light">
+                <tr>
+                    <th>ID</th>
+                    <th>Nama</th>
+                    <th>Harga</th>
+                    <th>Tersedia</th>
+                    <th>Aksi</th>
+                </tr>
+            </thead>
+            <tbody></tbody>
+        </table>
     </div>
 </div>
 
-{{-- SCRIPT JAVASCRIPT UNTUK MODAL KONFIRMASI HAPUS --}}
+@endsection
+
+
+@section('scriptjs')
 <script>
-    document.addEventListener('DOMContentLoaded', function () {
-        const deleteModal = document.getElementById('deleteMenuConfirmationModal');
-        const confirmDeleteButton = document.getElementById('confirmDeleteMenuButton');
-        let formToSubmit = null;
+$(document).ready(function () {
 
-        // Mendengarkan klik pada semua tombol hapus
-        document.querySelectorAll('.delete-menu-btn').forEach(button => {
-            button.addEventListener('click', function() {
-                const menuId = this.getAttribute('data-id');
-                const menuNama = this.getAttribute('data-nama');
+    // ======================================
+    //  DATATABLE
+    // ======================================
+    let table = $('#menuTable').DataTable({
+        // FIX: Route ini sekarang menunjuk ke MenuController@getMenuData
+        ajax: "{{ url('api/menu') }}",
+        columns: [
+            { data: "id", visible: false },
+            { data: "nama" },
+            {
+                data: "harga",
+                render: val => `Rp ${parseInt(val).toLocaleString()}`
+            },
+            {
+                data: "tersedia",
+                render: val => `
+                    <span class="badge bg-${val ? 'success':'danger'}">
+                        ${val ? 'Tersedia':'Habis'}
+                    </span>`
+            },
+            {
+                data: null,
+                render: row => {
+                    // Membuat URL menggunakan route helper Laravel
+                    const detailUrl = "{{ route('menu.show', ':id') }}".replace(':id', row.id);
+                    const editUrl = "{{ route('menu.edit', ':id') }}".replace(':id', row.id);
 
-                // Set nama menu di modal
-                document.getElementById('modal-menu-nama').textContent = menuNama;
-
-                // Simpan referensi form yang akan disubmit
-                formToSubmit = document.getElementById('delete-form-' + menuId);
-
-                // Tampilkan modal
-                const modal = new bootstrap.Modal(deleteModal);
-                modal.show();
-            });
-        });
-
-        // Mendengarkan klik pada tombol 'Hapus' di modal
-        confirmDeleteButton.addEventListener('click', function() {
-            if (formToSubmit) {
-                formToSubmit.submit();
+                    return `
+                        <a href="${detailUrl}" class="btn btn-info btn-sm me-1" title="Detail Menu"><i class="bi bi-eye"></i></a>
+                        <a href="${editUrl}" class="btn btn-warning btn-sm me-1" title="Edit Menu"><i class="bi bi-pencil"></i></a>
+                        <button class="btn btn-danger btn-sm btnHapus" data-id="${row.id}" title="Hapus Menu"><i class="bi bi-trash"></i></button>
+                    `;
+                }
             }
-            // Tutup modal
-            const modalInstance = bootstrap.Modal.getInstance(deleteModal);
-            if (modalInstance) {
-                modalInstance.hide();
-            }
-        });
+        ]
     });
+
+
+    // ==================================================
+    // HAPUS (Menggunakan API route)
+    // ==================================================
+    $(document).on('click', '.btnHapus', function(){
+        let id = $(this).data('id');
+
+        Swal.fire({
+            title: "Yakin ingin menghapus menu?",
+            text: "Penghapusan akan menghapus menu dan komposisi bahannya.",
+            icon: "warning",
+            showCancelButton: true,
+            confirmButtonText: "Hapus"
+        }).then(result => {
+            if(result.isConfirmed) {
+
+                $.ajax({
+                    // Menggunakan rute delete-menu API
+                    url: "{{ url('api/delete-menu') }}/" + id,
+                    type: "DELETE",
+                    data: { '_token': '{{ csrf_token() }}' },
+                    success: (res) => {
+                        Swal.fire("Terhapus!", "Menu berhasil dihapus", "success");
+                        table.ajax.reload();
+                    },
+                    error: (err) => {
+                        // Menampilkan pesan error dari server
+                        Swal.fire("Gagal!", err.responseJSON.message || "Terjadi kesalahan saat menghapus menu.", "error");
+                    }
+                });
+
+            }
+        });
+
+    });
+});
 </script>
 @endsection

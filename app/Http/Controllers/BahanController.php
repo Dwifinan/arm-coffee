@@ -20,9 +20,6 @@ public function getBahan()
         ]);
     }
 
-    // ============================
-    // TAMBAH BAHAN
-    // ============================
     public function addBahan(Request $request)
     {
         $dataFilter = $request->validate([
@@ -33,9 +30,6 @@ public function getBahan()
             "jumlah_satuan" => "required|numeric|min:1",
             "stok_minimal" => "required|integer|min:0",
         ]);
-
-        // Hitung harga per satuan
-        $dataFilter['harga_satuan'] = $dataFilter['harga_persatuan'] / $dataFilter['jumlah_satuan'];
 
         $simpan = Bahan::create($dataFilter);
 
@@ -85,9 +79,6 @@ public function getBahan()
             "jumlah_satuan" => "required|numeric|min:1",
             "stok_minimal" => "required|integer|min:0",
         ]);
-
-        // Hitung ulang harga satuan
-        $dataFilter['harga_satuan'] = $dataFilter['harga_persatuan'] / $dataFilter['jumlah_satuan'];
 
         $bahan->update($dataFilter);
 

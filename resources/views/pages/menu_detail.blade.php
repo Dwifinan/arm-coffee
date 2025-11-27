@@ -44,7 +44,7 @@
                     <tr>
                         <td>{{ $loop->iteration }}</td>
                         <td>{{ $detail->bahan->nama }} ({{ $detail->bahan->kode }})</td>
-                        <td>{{ $detail->jumlah }}</td>
+                        <td>{{ $detail->jumlah_bahan }}</td>
                         <td>{{ $detail->bahan->satuan }}</td>
                     </tr>
                     @empty

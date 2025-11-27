@@ -85,7 +85,7 @@
                                 </td>
                                 <td>
                                     <input type="number" name="jumlah_bahan[{{ $detailIndex }}]" class="form-control @error('jumlah_bahan.'.$detailIndex) is-invalid @enderror"
-                                           value="{{ old('jumlah_bahan.'.$detailIndex, $detail->jumlah) }}" min="1" required>
+                                           value="{{ old('jumlah_bahan.'.$detailIndex, $detail->jumlah_bahan) }}" min="1" required>
                                     @error('jumlah_bahan.'.$detailIndex)
                                         <div class="invalid-feedback">{{ $message }}</div>
                                     @enderror

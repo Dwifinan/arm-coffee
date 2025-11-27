@@ -5,18 +5,19 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
-class MenuDetail extends Model
+class Komposisi extends Model
 {
     use HasFactory;
 
     // Nama tabel yang sesuai dengan schema SQL Anda
-    protected $table = 'menu_detail';
+    protected $table = 'komposisi';
 
     // Kolom yang dapat diisi (fillable) untuk operasi create/update
     protected $fillable = [
         'menu_id',
         'bahan_id',
-        'jumlah'
+        'jumlah_bahan',
+        'satuan'
     ];
 
     /**

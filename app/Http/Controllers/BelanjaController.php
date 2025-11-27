@@ -3,12 +3,11 @@
 namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Session;
-use App\Models\Bahan; 
-use App\Models\BahanMasuk; 
+use App\Models\Bahan;
+use App\Models\BahanMasuk;
 use App\Models\BelanjaRequest; // Model yang digunakan untuk Request Aktif (DB Shared)
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\DB; 
+use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\Rule;
 
 class BelanjaController extends Controller
@@ -23,9 +22,9 @@ class BelanjaController extends Controller
         $historiBelanja = BahanMasuk::with('bahan')
                             ->orderBy('created_at', 'desc')
                             ->get();
-        
+
         // Variabel ini tidak dipakai di view ini, tapi dikirim untuk konsistensi
-        $requestList = collect([]); 
+        $requestList = collect([]);
 
         return view('pages.belanja', compact('historiBelanja', 'requestList'));
     }
@@ -37,17 +36,17 @@ class BelanjaController extends Controller
     public function request()
     {
         $bahan = Bahan::all();
-        
+
         // SEKARANG DARI DATABASE: Ambil semua request aktif dari tabel 'belanja_requests'
         $requestList = BelanjaRequest::with('bahan')->get();
-        
+
         // Mengirim data ke view request aktif
         return view('pages.belanja_request', compact('bahan', 'requestList'));
     }
 
     public function create()
     {
-        // Method ini menangkap panggilan ke route lama (belanja.create) 
+        // Method ini menangkap panggilan ke route lama (belanja.create)
         // dan mengarahkan ke route yang benar (belanja.request)
         return redirect()->route('belanja.request');
     }
@@ -82,7 +81,7 @@ class BelanjaController extends Controller
         if (Auth::user()->role !== 'owner') {
              return redirect()->route('belanja.request')->with('error', 'Akses ditolak.');
         }
-        
+
         try {
             // DARI DATABASE: Hapus request berdasarkan ID
             BelanjaRequest::findOrFail($id)->delete();
@@ -121,7 +120,7 @@ class BelanjaController extends Controller
 
                  // 3. Hapus dari daftar request aktif di database
                  $requestItem->delete();
-                 
+
                  DB::commit();
 
                  return redirect()->route('belanja.request')->with('success', 'Bahan berhasil dibeli dan stok diperbarui.');

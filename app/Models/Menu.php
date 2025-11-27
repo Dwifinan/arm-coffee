@@ -23,6 +23,6 @@ class Menu extends Model
      */
     public function details()
     {
-        return $this->hasMany(MenuDetail::class, 'menu_id', 'id');
+        return $this->hasMany(Komposisi::class, 'menu_id', 'id');
     }
 }
