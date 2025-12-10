@@ -57,11 +57,11 @@
             <div class="row mb-3">
                 <div class="col-md-6">
                     <label>Kode Bahan <span class="text-danger">*</span></label>
-                    <input type="text" name="kode" class="form-control" required placeholder="BHN-001">
+                    <input type="text" name="kode" class="form-control" autocomplete="off" required placeholder="BHN-001">
                 </div>
                 <div class="col-md-6">
                     <label>Nama Bahan <span class="text-danger">*</span></label>
-                    <input type="text" name="nama" class="form-control" required>
+                    <input type="text" name="nama" class="form-control" autocomplete="off" required>
                 </div>
             </div>
 
@@ -80,19 +80,19 @@
                 </div>
                 <div class="col-md-6">
                     <label>Stok Minimal <span class="text-danger">*</span></label>
-                    <input type="number" min="0" name="stok_minimal" class="form-control" required>
+                    <input type="number" min="0" name="stok_minimal" class="form-control" autocomplete="off" required>
                 </div>
             </div>
 
             <div class="row mb-3">
                 <div class="col-md-6">
                     <label>Harga <span class="text-danger">*</span></label>
-                    <input type="number" min="0" name="harga_persatuan" class="form-control" required>
+                    <input type="number" min="0" name="harga_persatuan" class="form-control" autocomplete="off" required>
                 </div>
                 <div class="col-md-6">
                     <label>Per <span class="text-danger">*</span></label>
                     <div class="input-group">
-                        <input type="number" name="jumlah_satuan" min="1" value="1" class="form-control">
+                        <input type="number" name="jumlah_satuan" min="1" value="1" class="form-control" autocomplete="off" required>
                         <span class="input-group-text" id="labelSatuan">-</span>
                     </div>
                 </div>
@@ -133,11 +133,11 @@
             <div class="row mb-3">
                 <div class="col-md-6">
                     <label>Kode <span class="text-danger">*</span></label>
-                    <input type="text" name="kode" id="edit_kode" class="form-control">
+                    <input type="text" name="kode" id="edit_kode" class="form-control" autocomplete="off" required>
                 </div>
                 <div class="col-md-6">
                     <label>Nama Bahan <span class="text-danger">*</span></label>
-                    <input type="text" name="nama" id="edit_nama" class="form-control">
+                    <input type="text" name="nama" id="edit_nama" class="form-control" autocomplete="off" required>
                 </div>
             </div>
 
@@ -156,19 +156,19 @@
                 </div>
                 <div class="col-md-6">
                     <label>Stok Minimal <span class="text-danger">*</span></label>
-                    <input type="number" name="stok_minimal" id="edit_stok_minimal" class="form-control">
+                    <input type="number" name="stok_minimal" id="edit_stok_minimal" class="form-control" autocomplete="off" required>
                 </div>
             </div>
 
             <div class="row mb-3">
                 <div class="col-md-6">
                     <label>Harga <span class="text-danger">*</span></label>
-                    <input type="number" name="harga_persatuan" id="edit_harga" class="form-control">
+                    <input type="number" name="harga_persatuan" id="edit_harga" class="form-control" autocomplete="off" required>
                 </div>
                 <div class="col-md-6">
                     <label>Per <span class="text-danger">*</span></label>
                     <div class="input-group">
-                        <input type="number" name="jumlah_satuan" id="edit_jumlah_per" class="form-control">
+                        <input type="number" name="jumlah_satuan" id="edit_jumlah_per" class="form-control" autocomplete="off" required>
                         <span class="input-group-text" id="edit_labelSatuan">-</span>
                     </div>
                 </div>

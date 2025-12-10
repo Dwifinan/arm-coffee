@@ -31,7 +31,7 @@
                 {{-- Bagian 1: Data Menu --}}
                 <div class="col-md-6">
                     <label for="nama" class="form-label">Nama Menu</label>
-                    <input type="text" class="form-control @error('nama') is-invalid @enderror" id="nama" name="nama" value="{{ old('nama') }}" required>
+                    <input type="text" class="form-control @error('nama') is-invalid @enderror" id="nama" name="nama" value="{{ old('nama') }}" autocomplete="off" required>
                     @error('nama')
                         <div class="invalid-feedback">{{ $message }}</div>
                     @enderror
@@ -39,7 +39,7 @@
 
                 <div class="col-md-6">
                     <label for="harga" class="form-label">Harga Jual (Rp)</label>
-                    <input type="number" class="form-control @error('harga') is-invalid @enderror" id="harga" name="harga" value="{{ old('harga') }}" required min="1000">
+                    <input type="number" class="form-control @error('harga') is-invalid @enderror" id="harga" name="harga" value="{{ old('harga') }}" autocomplete="off" required min="1000">
                     @error('harga')
                         <div class="invalid-feedback">{{ $message }}</div>
                     @enderror
@@ -78,7 +78,7 @@
                                     @enderror
                                 </td>
                                 <td>
-                                    <input type="number" name="jumlah_bahan[0]" class="form-control @error('jumlah_bahan.0') is-invalid @enderror" value="{{ old('jumlah_bahan.0') }}" min="1" required>
+                                    <input type="number" name="jumlah_bahan[0]" class="form-control @error('jumlah_bahan.0') is-invalid @enderror" value="{{ old('jumlah_bahan.0') }}" min="1" autocomplete="off" required>
                                     @error('jumlah_bahan.0')
                                         <div class="invalid-feedback">{{ $message }}</div>
                                     @enderror

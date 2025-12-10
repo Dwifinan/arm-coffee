@@ -34,15 +34,16 @@
                             if (!ctx) return;
 
                             // Data penjualan (contoh data dummy)
-                            const salesData = [120, 190, 300, 250, 220, 400, 350];
-                            const days = ['Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu', 'Minggu'];
+                            // Data dari controller
+                            const salesData = @json($chartData);
+                            const days = @json($chartDates);
 
                             new Chart(ctx, {
                                 type: 'line',
                                 data: {
                                     labels: days,
                                     datasets: [{
-                                        label: 'Jumlah Penjualan',
+                                        label: 'Jumlah Produksi (Item)',
                                         data: salesData,
                                         borderColor: '#a95e13',
                                         backgroundColor: 'rgba(169, 94, 19, 0.3)',

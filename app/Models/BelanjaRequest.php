@@ -9,17 +9,17 @@ class BelanjaRequest extends Model
 {
     use HasFactory;
 
-    protected $table = 'belanja_requests'; 
-    
+    protected $table = 'permintaan_belanja';
+
     // Kolom yang dapat diisi (fillable)
     protected $fillable = [
         'bahan_id',
         'jumlah'
     ];
 
-    // Karena kita sudah membuat kolom created_at dan updated_at di migrasi, 
+    // Karena kita sudah membuat kolom created_at dan updated_at di migrasi,
     // kita biarkan Model ini menggunakan timestamps default Laravel.
-    
+
     /**
      * Definisi relasi Many-to-One: Request ini terkait dengan satu Bahan.
      */

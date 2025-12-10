@@ -9,10 +9,9 @@ class Komposisi extends Model
 {
     use HasFactory;
 
-    // Nama tabel yang sesuai dengan schema SQL Anda
     protected $table = 'komposisi';
 
-    // Kolom yang dapat diisi (fillable) untuk operasi create/update
+    // Kolom yang dapat diisi
     protected $fillable = [
         'menu_id',
         'bahan_id',
@@ -21,18 +20,18 @@ class Komposisi extends Model
     ];
 
     /**
-     * Definisi relasi Many-to-One: Detail Menu (bahan) ini dimiliki oleh satu Menu
-     */
-    public function menu()
-    {
-        return $this->belongsTo(Menu::class, 'menu_id', 'id');
-    }
-
-    /**
-     * Definisi relasi Many-to-One: Detail Menu ini menggunakan satu Bahan
+     * Relasi Many-to-One: Komposisi merujuk pada satu Bahan
      */
     public function bahan()
     {
-        return $this->belongsTo(Bahan::class, 'bahan_id', 'id');
+        return $this->belongsTo(Bahan::class, 'bahan_id');
+    }
+
+    /**
+     * Relasi Many-to-One: Komposisi merujuk pada satu Menu
+     */
+    public function menu()
+    {
+        return $this->belongsTo(Menu::class, 'menu_id');
     }
 }

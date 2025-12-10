@@ -8,6 +8,7 @@ use App\Http\Controllers\MenuController;
 use App\Http\Controllers\KomposisiController;
 use App\Http\Controllers\UserController;
 use App\Http\Controllers\BelanjaController;
+use App\Http\Controllers\PenjualanController; // WAJIB: Import PenjualanController
 use Illuminate\Support\Facades\DB;
 
 Route::get('/', function () {
@@ -45,8 +46,20 @@ Route::middleware('auth')->group(function () {
         Route::get('/create', [BelanjaController::class, 'create'])->name('create');
     });
 
-    // --- BAHAN (Ingredients) ---
-    Route::get('bahan', [BahanController::class, 'index'])->name('bahan.index');
+    // --- BAHAN (Ingredients) - FULL CRUD ---
+    Route::prefix('bahan')->name('bahan.')->group(function () {
+        // READ - Tampilan utama DataTables
+        Route::get('/', [BahanController::class, 'index'])->name('index');
+
+        // CREATE
+        Route::post('/', [BahanController::class, 'store'])->name('store');
+        // READ - Edit Form
+        Route::get('/{bahan}/edit', [BahanController::class, 'edit'])->name('edit');
+        // UPDATE
+        Route::put('/{bahan}', [BahanController::class, 'update'])->name('update');
+        // DELETE
+        Route::delete('/{bahan}', [BahanController::class, 'destroy'])->name('destroy');
+    });
 
     // --- PRODUKSI (Production) ---
     Route::get('produksi', function () { return view('pages.produksi'); })->name('produksi');
@@ -69,7 +82,7 @@ Route::middleware('auth')->group(function () {
 Route::prefix('api')->middleware('auth')->group(function () {
 
     // ---------------------------------------------------------
-    // BAHAN
+    // BAHAN (Digunakan oleh DataTables dan Form)
     // ---------------------------------------------------------
     Route::get('/bahan', [BahanController::class, 'getBahan']);
     Route::post('/add-bahan', [BahanController::class, 'addBahan']);
@@ -78,9 +91,18 @@ Route::prefix('api')->middleware('auth')->group(function () {
     Route::delete('/delete-bahan/{id}', [BahanController::class, 'deleteBahan']);
 
     // ---------------------------------------------------------
+    // PENJUALAN / PRODUKSI (BARU DITAMBAHKAN)
+    // ---------------------------------------------------------
+    // 1. Endpoint untuk DataTables Laporan Produksi (GET /api/penjualan-produksi)
+    Route::get('/penjualan-produksi', [PenjualanController::class, 'produksiReport']);
+    // 2. Endpoint untuk menyimpan input produksi baru (POST /api/penjualan)
+    Route::post('/penjualan', [PenjualanController::class, 'store']);
+
+    // ---------------------------------------------------------
     // MENU
     // ---------------------------------------------------------
-    Route::get('/menu', [MenuController::class, 'getMenuData']); // FIX: Menunjuk ke method baru
+    Route::get('/menu-list', [MenuController::class, 'getMenuList']);
+    Route::get('/menu', [MenuController::class, 'getMenuData']);
     Route::get('/menu/{id}', [MenuController::class, 'showApi']);
     Route::post('/add-menu', [MenuController::class, 'storeApi']);
     Route::post('/update-menu/{id}', [MenuController::class, 'updateApi']);

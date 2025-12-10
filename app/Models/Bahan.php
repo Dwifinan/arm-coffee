@@ -10,18 +10,22 @@ class Bahan extends Model
     use HasFactory;
 
     protected $table = 'bahan';
+    protected $fillable = [
+        'kode',
+        'nama',
+        'satuan',
+        'harga_persatuan',
+        'jumlah_satuan',
+        'stok_minimal',
+        'stok'
+    ];
+    // Catatan: 'harga_satuan' adalah kolom yang tersimpan (storedAs) dan tidak perlu di fillable.
 
-    // Properti yang Anda berikan
-    protected $guarded = ["id"];
-    public $timestamps = false;
-
-    // --- Relasi (Penting untuk MenuController) ---
     /**
-     * Definisi relasi One-to-Many: Bahan dapat digunakan di banyak Detail Menu
+     * Relasi One-to-Many: Bahan memiliki banyak entri di Komposisi
      */
-    public function menuDetails()
+    public function komposisi()
     {
-        // Asumsi MenuDetail Model sudah ada
-        return $this->hasMany(MenuDetail::class, 'bahan_id', 'id');
+        return $this->hasMany(Komposisi::class, 'bahan_id');
     }
 }

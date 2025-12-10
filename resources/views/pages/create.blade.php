@@ -24,7 +24,7 @@
                 {{-- Username (Field yang ada di DB) --}}
                 <div class="col-md-12">
                     <label for="username" class="form-label">Username</label>
-                    <input type="text" class="form-control @error('username') is-invalid @enderror" id="username" name="username" value="{{ old('username') }}" required>
+                    <input type="text" class="form-control @error('username') is-invalid @enderror" id="username" name="username" value="{{ old('username') }}" autocomplete="off" required>
                     @error('username')
                         <div class="invalid-feedback">{{ $message }}</div>
                     @enderror
@@ -33,7 +33,7 @@
                 {{-- Password --}}
                 <div class="col-md-6">
                     <label for="password" class="form-label">Password</label>
-                    <input type="password" class="form-control @error('password') is-invalid @enderror" id="password" name="password" required>
+                    <input type="password" class="form-control @error('password') is-invalid @enderror" id="password" name="password" autocomplete="off" required>
                     @error('password')
                         <div class="invalid-feedback">{{ $message }}</div>
                     @enderror
@@ -42,7 +42,7 @@
                 {{-- Konfirmasi Password --}}
                 <div class="col-md-6">
                     <label for="password_confirmation" class="form-label">Konfirmasi Password</label>
-                    <input type="password" class="form-control" id="password_confirmation" name="password_confirmation" required>
+                    <input type="password" class="form-control" id="password_confirmation" name="password_confirmation" autocomplete="off" required>
                 </div>
 
                 {{-- Role (Enum: owner, staff - Sesuai DB) --}}
@@ -50,7 +50,6 @@
                     <label for="role" class="form-label">Role</label>
                     <select id="role" name="role" class="form-select @error('role') is-invalid @enderror" required>
                         <option value="">Pilih Role...</option>
-                        <option value="owner" {{ old('role') == 'owner' ? 'selected' : '' }}>Owner</option>
                         <option value="staff" {{ old('role') == 'staff' ? 'selected' : '' }}>Staff</option>
                     </select>
                     @error('role')

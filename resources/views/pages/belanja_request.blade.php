@@ -14,7 +14,7 @@
 
 <section class="section">
     <div class="row">
-        
+
         {{-- Menampilkan pesan dari controller --}}
         @if(session('success'))
             <div class="col-12">
@@ -68,7 +68,7 @@
 
                         <div class="mb-3">
                             <label for="jumlah" class="form-label">Jumlah</label>
-                            <input type="number" class="form-control @error('jumlah') is-invalid @enderror" name="jumlah" value="{{ old('jumlah') }}" required min="1">
+                            <input type="number" class="form-control @error('jumlah') is-invalid @enderror" name="jumlah" value="{{ old('jumlah') }}" autocomplete="off" required min="1">
                             @error('jumlah') <div class="invalid-feedback">{{ $message }}</div> @enderror
                         </div>
 
@@ -77,7 +77,7 @@
                 </div>
             </div>
         </div>
-        
+
         <div class="col-lg-6">
             <div class="card">
                 <div class="card-body">
@@ -112,7 +112,7 @@
                 </div>
             </div>
         </div>
-        
+
         {{-- ========================================================= --}}
         {{-- TAMPILAN STAFF (Daftar Tugas Aktif, 1 Kolom) --}}
         {{-- ========================================================= --}}
