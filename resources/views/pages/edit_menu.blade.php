@@ -67,10 +67,10 @@
                                 $detailIndex = 0;
                             @endphp
                             {{-- Loop data detail menu yang sudah ada --}}
-                            @forelse ($menu->details as $detail)
+                            @forelse ($menu->komposisi as $detail)
                             <tr id="bahan-row-{{ $detailIndex }}">
                                 <td>
-                                    <select name="bahan_id[{{ $detailIndex }}]" class="form-select bahan-select @error('bahan_id.'.$detailIndex) is-invalid @enderror" data-index="{{ $detailIndex }}" required>
+                                    <select name="bahan_id[{{ $detailIndex }}]" class="form-select bahan-select select2 @error('bahan_id.'.$detailIndex) is-invalid @enderror" data-index="{{ $detailIndex }}" required>
                                         <option value="">Pilih Bahan...</option>
                                         @foreach ($bahans as $bahan)
                                             <option value="{{ $bahan->id }}" data-satuan="{{ $bahan->satuan }}"
@@ -102,7 +102,7 @@
                             {{-- Jika tidak ada detail, tampilkan baris kosong seperti create --}}
                             <tr id="bahan-row-0">
                                 <td>
-                                    <select name="bahan_id[0]" class="form-select bahan-select @error('bahan_id.0') is-invalid @enderror" data-index="0" required>
+                                    <select name="bahan_id[0]" class="form-select bahan-select select2 @error('bahan_id.0') is-invalid @enderror" data-index="0" required>
                                         <option value="">Pilih Bahan...</option>
                                         @foreach ($bahans as $bahan)
                                             <option value="{{ $bahan->id }}" data-satuan="{{ $bahan->satuan }}" {{ old('bahan_id.0') == $bahan->id ? 'selected' : '' }}>
@@ -147,11 +147,22 @@
     </div>
 </section>
 
+{{-- Master Options for Select2 (Visible Select inside Hidden Div) --}}
+<div style="display: none;">
+    <select id="menu-bahan-options">
+        <option value="">Pilih Bahan...</option>
+        @foreach ($bahans as $bahan)
+            <option value="{{ $bahan->id }}" data-satuan="{{ $bahan->satuan }}">
+                {{ $bahan->nama }} ({{ $bahan->kode }})
+            </option>
+        @endforeach
+    </select>
+</div>
+
 {{-- SCRIPT JAVASCRIPT UNTUK FUNGSI DINAMIS --}}
 <script>
     let rowCount = {{ $detailIndex }}; // Mulai dari jumlah detail yang ada
     const bahanTableBody = document.querySelector('#bahan-table tbody');
-    const bahansData = @json($bahans);
 
     document.getElementById('add-bahan-btn').addEventListener('click', function() {
         addBahanRow();
@@ -159,18 +170,13 @@
 
     function addBahanRow() {
         const newIndex = rowCount++;
-
-        let selectOptions = '<option value="">Pilih Bahan...</option>';
-        bahansData.forEach(bahan => {
-            selectOptions += `<option value="${bahan.id}" data-satuan="${bahan.satuan}">${bahan.nama} (${bahan.kode})</option>`;
-        });
-
+        
         const newRow = document.createElement('tr');
         newRow.id = `bahan-row-${newIndex}`;
         newRow.innerHTML = `
             <td>
-                <select name="bahan_id[${newIndex}]" class="form-select bahan-select" data-index="${newIndex}" required>
-                    ${selectOptions}
+                <select name="bahan_id[${newIndex}]" class="form-select bahan-select select2-dynamic" data-index="${newIndex}" required>
+                    <!-- Options will be cloned here -->
                 </select>
             </td>
             <td>
@@ -185,13 +191,36 @@
         `;
         bahanTableBody.appendChild(newRow);
 
-        // Tambahkan event listener untuk baris baru
-        newRow.querySelector('.bahan-select').addEventListener('change', updateSatuanDisplay);
+        // Populate Options by Cloning
+        const masterSelect = document.getElementById('menu-bahan-options');
+        const newSelect = newRow.querySelector('.select2-dynamic');
+        
+        if (masterSelect) {
+            Array.from(masterSelect.options).forEach(opt => {
+                newSelect.add(opt.cloneNode(true));
+            });
+        }
+
+        // Init Select2 on new element
+        $(newSelect).select2({
+            theme: 'bootstrap-5',
+            width: '100%',
+            placeholder: "Pilih Bahan...",
+            allowClear: true
+        });
+
+        // Add event listener
+        $(newRow).find('.bahan-select').on('change', updateSatuanDisplay);
     }
 
     function removeBahanRow(index) {
         const row = document.getElementById(`bahan-row-${index}`);
         if (row) {
+            // If Select2 was initialized, destroy it before removing the element
+            const selectElement = $(row).find('.select2-dynamic, .select2');
+            if (selectElement.data('select2')) {
+                selectElement.select2('destroy');
+            }
             row.remove();
         }
     }
@@ -210,11 +239,20 @@
         }
     }
 
-    // Initialize event listeners for all existing rows
-    document.querySelectorAll('.bahan-select').forEach(select => {
-        select.addEventListener('change', updateSatuanDisplay);
-        // Trigger change event to initialize satuan display based on existing data
-        select.dispatchEvent(new Event('change'));
+    // Initialize Select2 for existing elements
+    $(document).ready(function() {
+        $('.select2').select2({
+            theme: 'bootstrap-5',
+            width: '100%',
+            placeholder: "Pilih Bahan...",
+            allowClear: true
+        });
     });
+
+    // Initialize event listeners for existing rows
+    $('.bahan-select').on('change', updateSatuanDisplay);
+    
+    // Initial trigger to show correct units
+    $('.bahan-select').trigger('change');
 </script>
 @endsection

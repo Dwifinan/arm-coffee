@@ -48,7 +48,7 @@
                 {{-- Role (Enum: owner, staff - Sesuai DB) --}}
                 <div class="col-md-12">
                     <label for="role" class="form-label">Role</label>
-                    <select id="role" name="role" class="form-select @error('role') is-invalid @enderror" required>
+                    <select id="role" name="role" class="form-select select2 @error('role') is-invalid @enderror" required>
                         <option value="">Pilih Role...</option>
                         <option value="staff" {{ old('role') == 'staff' ? 'selected' : '' }}>Staff</option>
                     </select>

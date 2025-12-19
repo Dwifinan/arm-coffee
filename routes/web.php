@@ -38,12 +38,14 @@ Route::middleware('auth')->group(function () {
 
     // --- BELANJA (Purchasing) ---
     Route::prefix('belanja')->name('belanja.')->group(function () {
+        Route::get('/riwayat', [BelanjaController::class, 'riwayat'])->name('riwayat'); // Must be before {id}
         Route::get('/', [BelanjaController::class, 'index'])->name('index');
-        Route::get('/request', [BelanjaController::class, 'request'])->name('request');
-        Route::post('/tambah', [BelanjaController::class, 'tambah'])->name('tambah');
-        Route::delete('/hapus/{id}', [BelanjaController::class, 'hapus'])->name('hapus');
-        Route::post('/selesai/{id}', [BelanjaController::class, 'selesai'])->name('selesai');
         Route::get('/create', [BelanjaController::class, 'create'])->name('create');
+        Route::post('/', [BelanjaController::class, 'store'])->name('store');
+        Route::get('/{id}', [BelanjaController::class, 'show'])->name('show');
+        Route::get('/{id}/edit', [BelanjaController::class, 'edit'])->name('edit');
+        Route::put('/{id}', [BelanjaController::class, 'update'])->name('update');
+        Route::delete('/{id}', [BelanjaController::class, 'destroy'])->name('destroy');
     });
 
     // --- BAHAN (Ingredients) - FULL CRUD ---

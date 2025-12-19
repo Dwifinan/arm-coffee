@@ -14,7 +14,8 @@ class BelanjaRequest extends Model
     // Kolom yang dapat diisi (fillable)
     protected $fillable = [
         'bahan_id',
-        'jumlah'
+        'jumlah',
+        'total_harga'
     ];
 
     // Karena kita sudah membuat kolom created_at dan updated_at di migrasi,

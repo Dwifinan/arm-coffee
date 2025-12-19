@@ -2,6 +2,16 @@
 
 @section('content')
 
+<div class="pagetitle">
+    <h1>Data Bahan Baku</h1>
+    <nav>
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="{{ url('/') }}">Home</a></li>
+            <li class="breadcrumb-item active">Bahan</li>
+        </ol>
+    </nav>
+</div>
+
 <style>
     div.dataTables_filter {
         margin-bottom: 18px !important;
@@ -196,11 +206,21 @@ $(document).ready(function () {
     // ======================================
     //  SELECT2
     // ======================================
-    // $('#selectSatuan, #edit_satuan').select2({
-    //     dropdownParent: $('#modalTambahBahan, #modalEditBahan'),
-    //     tags: true,
-    //     placeholder: "Pilih atau ketik satuan"
-    // });
+    $('#selectSatuan').select2({
+        dropdownParent: $('#modalTambahBahan'),
+        theme: 'bootstrap-5',
+        placeholder: "Pilih atau ketik satuan",
+        tags: true,
+        width: '100%'
+    });
+
+    $('#edit_satuan').select2({
+        dropdownParent: $('#modalEditBahan'),
+        theme: 'bootstrap-5',
+        placeholder: "Pilih atau ketik satuan",
+        tags: true,
+        width: '100%'
+    });
 
     $('#selectSatuan').change(function(){
         $('#labelSatuan').text($(this).val());

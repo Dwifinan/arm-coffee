@@ -35,35 +35,47 @@
 
                             // Data penjualan (contoh data dummy)
                             // Data dari controller
-                            const salesData = @json($chartData);
+                            const datasets = @json($chartDatasets);
                             const days = @json($chartDates);
 
                             new Chart(ctx, {
-                                type: 'line',
+                                type: 'bar',
                                 data: {
                                     labels: days,
-                                    datasets: [{
-                                        label: 'Jumlah Produksi (Item)',
-                                        data: salesData,
-                                        borderColor: '#a95e13',
-                                        backgroundColor: 'rgba(169, 94, 19, 0.3)',
-                                        fill: true,
-                                        tension: 0.3
-                                    }]
+                                    datasets: datasets
                                 },
                                 options: {
                                     responsive: true,
+                                    interaction: {
+                                        mode: 'index',
+                                        intersect: false,
+                                    },
                                     plugins: {
                                         legend: {
                                             position: 'top',
                                         },
                                         title: {
                                             display: true,
-                                            text: 'Statistik Penjualan 1 Minggu Terakhir'
+                                            text: 'Statistik Penjualan Per Menu (1 Minggu Terakhir)'
+                                        },
+                                        tooltip: {
+                                            callbacks: {
+                                                footer: function(tooltipItems) {
+                                                    let total = 0;
+                                                    tooltipItems.forEach(function(tooltipItem) {
+                                                        total += tooltipItem.parsed.y;
+                                                    });
+                                                    return 'Total: ' + total;
+                                                }
+                                            }
                                         }
                                     },
                                     scales: {
+                                        x: {
+                                            stacked: true,
+                                        },
                                         y: {
+                                            stacked: true,
                                             beginAtZero: true
                                         }
                                     }
@@ -80,24 +92,33 @@
     </div>
 </section>
 
-{{-- SCRIPT PERINGATAN STOK KRITIS (Dari kode sebelumnya) --}}
-@if ($stokKritis->count() > 0)
+{{-- SCRIPT PERINGATAN STOK KRITIS (Owner Only) --}}
+@if (Auth::user()->role === 'owner' && ($stokKritis->count() > 0 || $expiringItems->count() > 0))
 <script>
     document.addEventListener('DOMContentLoaded', function() {
-        // Daftar bahan yang stoknya kritis
-        // const kritisItems = @json($stokKritis->pluck('nama', 'stok')); // Variabel ini tidak diperlukan di JS
+        let htmlList = '';
 
-        let htmlList = '<p>Bahan-bahan berikut memiliki stok di bawah batas minimum:</p><ul>';
+        @if($stokKritis->count() > 0)
+            htmlList += '<p><strong>Stok Kritis:</strong></p><ul>';
+            @foreach($stokKritis as $item)
+                htmlList += `<li><strong>{{ $item->nama }}</strong> (Stok: {{ $item->stok }}, Min: {{ $item->stok_minimal }} {{ $item->satuan }})</li>`;
+            @endforeach
+            htmlList += '</ul>';
+        @endif
 
-        @foreach($stokKritis as $item)
-            htmlList += `<li><strong>{{ $item->nama }}</strong> (Stok: {{ $item->stok }}, Min: {{ $item->stok_minimal }} {{ $item->satuan }})</li>`;
-        @endforeach
-
-        htmlList += '</ul><p>Mohon segera belanja.</p>';
+        @if($expiringItems->count() > 0)
+            htmlList += '<hr><p><strong>Mendekati Expired (2 Hari):</strong></p><ul>';
+            @foreach($expiringItems as $item)
+                htmlList += `<li><strong>{{ $item->bahan->nama }}</strong> (Exp: {{ $item->expired->format('d M Y') }})</li>`;
+            @endforeach
+            htmlList += '</ul>';
+        @endif
+        
+        htmlList += '<p>Mohon segera tindak lanjuti.</p>';
 
         // Tampilkan peringatan menggunakan SweetAlert
         Swal.fire({
-            title: 'Stok Bahan Kritis!',
+            title: 'Peringatan Stok!',
             icon: 'warning',
             html: htmlList,
             showCancelButton: true,

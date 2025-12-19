@@ -3,6 +3,16 @@
 
 @section('content')
 
+<div class="pagetitle">
+    <h1>Daftar Menu</h1>
+    <nav>
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="{{ url('/') }}">Home</a></li>
+            <li class="breadcrumb-item active">Menu</li>
+        </ol>
+    </nav>
+</div>
+
 <style>
     div.dataTables_filter {
         margin-bottom: 18px !important;

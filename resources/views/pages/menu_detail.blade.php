@@ -40,7 +40,7 @@
                     </tr>
                 </thead>
                 <tbody>
-                    @forelse ($menu->details as $detail)
+                    @forelse ($menu->komposisi as $detail)
                     <tr>
                         <td>{{ $loop->iteration }}</td>
                         <td>{{ $detail->bahan->nama }} ({{ $detail->bahan->kode }})</td>

@@ -2,135 +2,217 @@
 
 namespace App\Http\Controllers;
 
-use Illuminate\Http\Request;
 use App\Models\Bahan;
 use App\Models\BahanMasuk;
-use App\Models\BelanjaRequest; // Model yang digunakan untuk Request Aktif (DB Shared)
+use App\Models\Belanja;
+use App\Models\BelanjaDetail;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Validation\Rule;
+use Illuminate\Support\Str;
 
 class BelanjaController extends Controller
 {
-    /**
-     * Menampilkan Histori Pembelian (route: belanja.index).
-     * Dibatasi untuk Owner saja.
-     */
+    // List Request (Owner & Staff)
     public function index()
     {
-        // Owner melihat Histori Permanen dari database (BahanMasuk)
-        $historiBelanja = BahanMasuk::with('bahan')
-                            ->orderBy('created_at', 'desc')
-                            ->get();
+        // Owner sees all, Staff sees pending tasks (or all?)
+        // Let's show all for now, maybe filter by status in view or here
+        $belanja = Belanja::with(['userRequest', 'details'])
+                    ->orderBy('created_at', 'desc')
+                    ->get();
 
-        // Variabel ini tidak dipakai di view ini, tapi dikirim untuk konsistensi
-        $requestList = collect([]);
-
-        return view('pages.belanja', compact('historiBelanja', 'requestList'));
+        return view('pages.belanja.index', compact('belanja'));
     }
 
-    /**
-     * Menampilkan Form Tambah dan Daftar Request Aktif (route: belanja.request).
-     * Diakses oleh Owner (untuk tambah/hapus) dan Staff (untuk selesai).
-     */
-    public function request()
-    {
-        $bahan = Bahan::all();
-
-        // SEKARANG DARI DATABASE: Ambil semua request aktif dari tabel 'belanja_requests'
-        $requestList = BelanjaRequest::with('bahan')->get();
-
-        // Mengirim data ke view request aktif
-        return view('pages.belanja_request', compact('bahan', 'requestList'));
-    }
-
+    // Form Create (Owner)
     public function create()
     {
-        // Method ini menangkap panggilan ke route lama (belanja.create)
-        // dan mengarahkan ke route yang benar (belanja.request)
-        return redirect()->route('belanja.request');
-    }
-
-    public function tambah(Request $request)
-    {
         if (Auth::user()->role !== 'owner') {
-             return redirect()->route('belanja.request')->with('error', 'Akses ditolak.');
+            return redirect()->route('belanja.index')->with('error', 'Akses ditolak.');
         }
 
+        $bahan = Bahan::all();
+        return view('pages.belanja.create', compact('bahan'));
+    }
+
+
+    // Store Request (Owner)
+    public function store(Request $request)
+    {
+        if (Auth::user()->role !== 'owner') abort(403);
+
         $request->validate([
-            'bahan_id' => 'required|exists:bahan,id',
-            'jumlah' => 'required|numeric|min:1'
+            'items' => 'required|array|min:1',
+            'items.*.bahan_id' => 'required|exists:bahan,id',
+            'items.*.jumlah' => 'required|integer|min:1',
         ]);
 
         try {
-            // KE DATABASE: Simpan request aktif
-            BelanjaRequest::create([
-                'bahan_id' => $request->bahan_id,
-                'jumlah' => $request->jumlah
+            DB::beginTransaction();
+
+            // Create Header
+            $belanja = Belanja::create([
+                'kode' => 'REQ-' . date('ymd') . '-' . strtoupper(Str::random(4)),
+                'user_id_request' => Auth::id(),
+                'status' => 'pending',
+                'total_estimasi' => 0 // Hitung nanti
             ]);
 
-            return redirect()->route('belanja.request')->with('success', 'Request berhasil ditambahkan.');
+            $totalEstimasi = 0;
 
-        } catch (\Exception $e) {
-            return redirect()->back()->withInput()->with('error', 'Gagal menyimpan request: ' . $e->getMessage());
-        }
-    }
+            foreach ($request->items as $item) {
+                // Get Price
+                $bahan = Bahan::find($item['bahan_id']);
+                $price = $bahan->harga_satuan ?? 0; // Use Satuan Price
+                $subtotal = $price * $item['jumlah'];
 
-    public function hapus($id)
-    {
-        if (Auth::user()->role !== 'owner') {
-             return redirect()->route('belanja.request')->with('error', 'Akses ditolak.');
-        }
-
-        try {
-            // DARI DATABASE: Hapus request berdasarkan ID
-            BelanjaRequest::findOrFail($id)->delete();
-            return redirect()->route('belanja.request')->with('success', 'Request berhasil dihapus.');
-        } catch (\Exception $e) {
-            return redirect()->route('belanja.request')->with('error', 'Gagal menghapus request: ' . $e->getMessage());
-        }
-    }
-
-    public function selesai($id)
-    {
-        if (Auth::user()->role !== 'staff') {
-             return redirect()->route('belanja.request')->with('error', 'Akses ditolak.');
-        }
-
-        $requestItem = BelanjaRequest::with('bahan')->find($id);
-
-        if ($requestItem) {
-            try {
-                DB::beginTransaction();
-
-                // 1. Catat ke Histori (Tabel BahanMasuk)
-                BahanMasuk::create([
-                    'bahan_id' => $requestItem->bahan_id,
-                    'jumlah' => $requestItem->jumlah,
-                    'harga' => 0, // Perlu di-input jika fungsionalitas di-perluas
-                    'harga_satuan' => 0, // Perlu di-input jika fungsionalitas di-perluas
-                    'total_harga' => 0, // Perlu di-input jika fungsionalitas di-perluas
-                    'expired' => now()->addYears(10), // Nilai placeholder sementara
+                BelanjaDetail::create([
+                    'belanja_id' => $belanja->id,
+                    'bahan_id' => $item['bahan_id'],
+                    'jumlah_estimasi' => $item['jumlah'],
+                    'harga_satuan_estimasi' => $price,
+                    'subtotal_estimasi' => $subtotal,
                 ]);
 
-                // 2. Update stok bahan
-                 $bahan = Bahan::find($requestItem->bahan_id);
-                 $bahan->stok += $requestItem->jumlah;
-                 $bahan->save();
-
-                 // 3. Hapus dari daftar request aktif di database
-                 $requestItem->delete();
-
-                 DB::commit();
-
-                 return redirect()->route('belanja.request')->with('success', 'Bahan berhasil dibeli dan stok diperbarui.');
-
-            } catch (\Exception $e) {
-                DB::rollBack();
-                 return redirect()->route('belanja.request')->with('error', 'Gagal update stok atau simpan histori: ' . $e->getMessage());
+                $totalEstimasi += $subtotal;
             }
+
+            $belanja->update(['total_estimasi' => $totalEstimasi]);
+
+            DB::commit();
+            return redirect()->route('belanja.index')->with('success', 'Request Belanja berhasil dibuat.');
+
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return back()->with('error', 'Gagal membuat request: ' . $e->getMessage());
+        }
+    }
+
+    // Show Detail
+    public function show($id)
+    {
+        $belanja = Belanja::with(['details.bahan', 'userRequest', 'userSelesai'])->findOrFail($id);
+        return view('pages.belanja.show', compact('belanja'));
+    }
+
+    // Form Complete (Staff) -> Using Edit method naming convention
+    public function edit($id)
+    {
+        if (Auth::user()->role !== 'staff') {
+            return redirect()->route('belanja.index')->with('error', 'Akses ditolak.');
         }
 
-        return redirect()->route('belanja.request')->with('error', 'Item request tidak ditemukan.');
+        $belanja = Belanja::with(['details.bahan'])->where('status', 'pending')->findOrFail($id);
+        return view('pages.belanja.complete', compact('belanja'));
+    }
+
+    // Process Complete (Staff) -> Update method
+    public function update(Request $request, $id)
+    {
+        if (Auth::user()->role !== 'staff') abort(403);
+
+        $belanja = Belanja::with('details')->findOrFail($id);
+
+        // Unmask Rupiah Format in Items
+        if ($request->has('items')) {
+            $items = $request->items;
+            foreach ($items as $key => $val) {
+                if (isset($val['subtotal_akhir'])) {
+                    $items[$key]['subtotal_akhir'] = preg_replace('/\D/', '', $val['subtotal_akhir']);
+                }
+            }
+            $request->merge(['items' => $items]);
+        }
+
+        $request->validate([
+            'foto_bukti' => 'required|image|max:2048', // 2MB
+            'items' => 'required|array',
+            'items.*.jumlah_akhir' => 'required|integer|min:1',
+            'items.*.subtotal_akhir' => 'required|numeric|min:0', // Staff inputs Total Price per item
+            'items.*.expired' => 'required|date',
+        ]);
+
+        try {
+            DB::beginTransaction();
+
+            // Upload Foto
+            $fotoPath = null;
+            if ($request->hasFile('foto_bukti')) {
+                $file = $request->file('foto_bukti');
+                $filename = time() . '_' . $file->getClientOriginalName();
+                $file->move(public_path('assets/img/bukti_belanja'), $filename);
+                $fotoPath = 'assets/img/bukti_belanja/' . $filename;
+            }
+
+            $totalAkhir = 0;
+
+            foreach ($request->items as $detailId => $data) {
+                $detail = BelanjaDetail::findOrFail($detailId);
+
+                // Calculate Unit Price
+                $subtotal = $data['subtotal_akhir']; // Input by user
+                $unitPrice = ($data['jumlah_akhir'] > 0) ? ($subtotal / $data['jumlah_akhir']) : 0;
+                
+                $totalAkhir += $subtotal;
+
+                // Update Detail
+                $detail->update([
+                    'jumlah_akhir' => $data['jumlah_akhir'],
+                    'harga_satuan_akhir' => $unitPrice,
+                    'subtotal_akhir' => $subtotal,
+                    'expired' => $data['expired']
+                ]);
+
+                // Update Stock (Table Bahan)
+                $bahan = Bahan::find($detail->bahan_id);
+                $bahan->stok += $data['jumlah_akhir'];
+                $bahan->save();
+
+                // Create History (Table BahanMasuk)
+                BahanMasuk::create([
+                    'bahan_id' => $detail->bahan_id,
+                    'jumlah' => $data['jumlah_akhir'],
+                    'harga' => $unitPrice,
+                    'harga_satuan' => $unitPrice,
+                    'total_harga' => $subtotal,
+                    'expired' => $data['expired'],
+                    // Link to belanja? Not in schema but implicitly linked by time/context
+                ]);
+            }
+
+            // Update Header
+            $belanja->update([
+                'status' => 'selesai',
+                'user_id_selesai' => Auth::id(),
+                'total_akhir' => $totalAkhir,
+                'foto_bukti' => $fotoPath
+            ]);
+
+            DB::commit();
+            return redirect()->route('belanja.index')->with('success', 'Belanja berhasil diselesaikan.');
+
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return back()->with('error', 'Gagal menyelesaikan belanja: ' . $e->getMessage());
+        }
+    }
+
+    // Keep Riwayat
+    public function riwayat()
+    {
+         $riwayat = BahanMasuk::with('bahan')->orderBy('created_at', 'desc')->get();
+         return view('pages.belanja.riwayat', compact('riwayat'));
+    }
+
+    public function destroy($id)
+    {
+        if (Auth::user()->role !== 'owner') abort(403);
+        $belanja = Belanja::findOrFail($id);
+        if ($belanja->status !== 'pending') {
+             return back()->with('error', 'Hanya request pending yang bisa dihapus.');
+        }
+        $belanja->delete();
+        return back()->with('success', 'Request dihapus.');
     }
 }

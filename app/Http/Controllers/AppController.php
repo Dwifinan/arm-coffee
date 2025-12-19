@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Bahan;
+use App\Models\BahanMasuk;
 use App\Models\Penjualan;
 use Illuminate\Http\Request;
 use Carbon\Carbon;
@@ -10,28 +11,82 @@ use Illuminate\Support\Facades\DB;
 
 class AppController extends Controller
 {
+
+
     public function dashboardView(){
+        // 1. Stok Kritis
         $stokKritis = Bahan::whereNotNull('stok')
                           ->whereColumn('stok', '<=', 'stok_minimal')
                           ->get();
 
-        // Ambil data 7 hari terakhir
-        $dates = [];
-        $salesData = [];
-        for ($i = 6; $i >= 0; $i--) {
-            $date = Carbon::now()->subDays($i);
-            $formattedDate = $date->format('Y-m-d');
-            $dates[] = $date->locale('id')->isoFormat('dddd'); // Nama hari saja, bisa diganti format lain
+        // 2. Expiring Items (Next 2 Days)
+        // Check History of Incoming Items that are expiring soon AND whose Bahan still has stock
+        $expiringItems = BahanMasuk::with('bahan')
+                            ->whereDate('expired', '>=', Carbon::today())
+                            ->whereDate('expired', '<=', Carbon::today()->addDays(2))
+                            ->get()
+                            ->filter(function($batch) {
+                                // Only alert if the Bahan itself still has stock > 0
+                                return $batch->bahan && $batch->bahan->stok > 0;
+                            })
+                            ->unique('bahan_id'); // Unique by Bahan
 
-            // Hitung total jumlah produksi pada tanggal tersebut
-            $totalProduksi = Penjualan::whereDate('created_at', $formattedDate)->sum('jumlah');
-            $salesData[] = $totalProduksi;
+        // 3. Setup Dates (Last 7 Days)
+        $dates = [];
+        $dateLabels = [];
+        for ($i = 6; $i >= 0; $i--) {
+             $d = Carbon::now()->subDays($i);
+             $dates[] = $d->format('Y-m-d');
+             $dateLabels[] = $d->locale('id')->isoFormat('dddd');
+        }
+
+        // 4. Fetch Sales Data grouped by Date & Menu
+        // We need all sales in the date range
+        $startDate = Carbon::now()->subDays(6)->startOfDay();
+        
+        $sales = Penjualan::with('menu')
+                    ->where('created_at', '>=', $startDate)
+                    ->selectRaw('DATE(created_at) as date, menu_id, SUM(jumlah) as total')
+                    ->groupBy('date', 'menu_id')
+                    ->get();
+        
+        // 5. Identify all distinct menus sold in this period
+        $menus = $sales->map(function($sale) {
+             return $sale->menu->nama ?? 'Unknown';
+        })->unique()->values();
+
+        // 6. Build Datasets
+        $datasets = [];
+        $colors = [
+            '#4e73df', '#1cc88a', '#36b9cc', '#f6c23e', '#e74a3b', 
+            '#858796', '#5a5c69', '#2c9faf', '#c0392b', '#f1c40f'
+        ];
+        
+        foreach ($menus as $index => $menuName) {
+            $data = [];
+            foreach ($dates as $date) {
+                // Find sale for this menu on this date
+                $qty = $sales->filter(function($s) use ($date, $menuName) {
+                     return $s->date == $date && ($s->menu->nama ?? 'Unknown') == $menuName;
+                })->sum('total');
+                $data[] = $qty;
+            }
+            
+            // Assign color (cycle through palette)
+            $color = $colors[$index % count($colors)];
+
+            $datasets[] = [
+                'label' => $menuName,
+                'data' => $data,
+                'backgroundColor' => $color,
+            ];
         }
 
         return view('pages.dashboard', [
             'stokKritis' => $stokKritis,
-            'chartDates' => $dates,
-            'chartData' => $salesData
+            'expiringItems' => $expiringItems,
+            'chartDates' => $dateLabels,
+            'chartDatasets' => $datasets
         ]);
     }
 

@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Menu;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
+use Illuminate\Support\Facades\DB;
 
 class MenuController extends Controller
 {
@@ -51,31 +52,115 @@ class MenuController extends Controller
     // Menangani form tambah menu (GET /menu/create)
     public function create()
     {
-        // Logika untuk menampilkan form tambah
+        $bahans = \App\Models\Bahan::all();
+        return view('pages.create_menu', compact('bahans'));
     }
 
     // Menangani penyimpanan menu baru (POST /menu)
     public function store(Request $request)
     {
-        // Logika penyimpanan menu dan komposisi
+        $validator = Validator::make($request->all(), [
+            'nama' => 'required|string|max:255',
+            'harga' => 'required|numeric|min:0',
+            'bahan_id' => 'required|array',
+            'bahan_id.*' => 'required|exists:bahan,id',
+            'jumlah_bahan' => 'required|array',
+            'jumlah_bahan.*' => 'required|numeric|min:1',
+        ]);
+
+        if ($validator->fails()) {
+            return redirect()->back()->withErrors($validator)->withInput();
+        }
+
+        try {
+            DB::beginTransaction();
+
+            $menu = Menu::create([
+                'nama' => $request->nama,
+                'harga' => $request->harga,
+                'tersedia' => 1
+            ]);
+
+            foreach ($request->bahan_id as $index => $bahanId) {
+                // Fetch satuan from Bahan logic? Or allow standard from Bahan model
+                $bahan = \App\Models\Bahan::find($bahanId);
+                
+                $menu->komposisi()->create([
+                    'bahan_id' => $bahanId,
+                    'jumlah_bahan' => $request->jumlah_bahan[$index] ?? 1,
+                    'satuan' => $bahan->satuan ?? 'pcs' 
+                ]);
+            }
+
+            DB::commit();
+            return redirect()->route('menu.index')->with('success', 'Menu berhasil ditambahkan');
+
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return redirect()->back()->with('error', 'Gagal menambahkan menu: ' . $e->getMessage())->withInput();
+        }
     }
 
     // Menangani detail menu (GET /menu/{menu})
     public function show(Menu $menu)
     {
-        // Logika menampilkan detail menu
+        $menu->load('komposisi.bahan');
+        return view('pages.menu_detail', compact('menu'));
     }
 
     // Menangani form edit menu (GET /menu/{menu}/edit)
     public function edit(Menu $menu)
     {
-        // Logika menampilkan form edit
+        $bahans = \App\Models\Bahan::all();
+        $menu->load('komposisi'); 
+        return view('pages.edit_menu', compact('menu', 'bahans'));
     }
 
     // Menangani update menu (PUT /menu/{menu})
     public function update(Request $request, Menu $menu)
     {
-        // Logika update menu dan komposisi
+        $validator = Validator::make($request->all(), [
+            'nama' => 'required|string|max:255',
+            'harga' => 'required|numeric|min:0',
+            'bahan_id' => 'nullable|array',
+            'bahan_id.*' => 'required|exists:bahan,id',
+            'jumlah_bahan' => 'nullable|array',
+            'jumlah_bahan.*' => 'required|numeric|min:1',
+        ]);
+
+        if ($validator->fails()) {
+            return redirect()->back()->withErrors($validator)->withInput();
+        }
+
+        try {
+            DB::beginTransaction();
+
+            $menu->update([
+                'nama' => $request->nama,
+                'harga' => $request->harga
+            ]);
+
+            // Sync Komposisi: Delete all and recreate
+            $menu->komposisi()->delete();
+
+            if ($request->has('bahan_id')) {
+                foreach ($request->bahan_id as $index => $bahanId) {
+                    $bahan = \App\Models\Bahan::find($bahanId);
+                    $menu->komposisi()->create([
+                        'bahan_id' => $bahanId,
+                        'jumlah_bahan' => $request->jumlah_bahan[$index] ?? 1,
+                        'satuan' => $bahan->satuan ?? 'pcs'
+                    ]);
+                }
+            }
+
+            DB::commit();
+            return redirect()->route('menu.index')->with('success', 'Menu berhasil diupdate');
+
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return redirect()->back()->with('error', 'Gagal update menu: ' . $e->getMessage())->withInput();
+        }
     }
 
     // Menangani penghapusan menu melalui API (DELETE /api/delete-menu/{id})
@@ -90,23 +175,5 @@ class MenuController extends Controller
         } catch (\Exception $e) {
             return response()->json(['success' => false, 'message' => $e->getMessage()], 500);
         }
-    }
-
-    // Skeleton API untuk form edit (GET /api/menu/{id})
-    public function showApi($id)
-    {
-        // Logika untuk mengambil detail menu untuk form edit API
-    }
-
-    // Skeleton API untuk menyimpan menu baru (POST /api/add-menu)
-    public function storeApi(Request $request)
-    {
-        // Logika untuk menyimpan menu melalui API
-    }
-
-    // Skeleton API untuk update menu (POST /api/update-menu/{id})
-    public function updateApi(Request $request, $id)
-    {
-        // Logika untuk update menu melalui API
     }
 }

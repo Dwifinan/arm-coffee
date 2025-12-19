@@ -17,14 +17,13 @@
 <section class="section">
     <div class="card shadow mb-4">
         <div class="card-header py-3 d-flex justify-content-between align-items-center">
-            <h6 class="m-0 font-weight-bold text-primary">Laporan Hasil Produksi (Berdasarkan Penjualan)</h6>
+            <h5 class="m-0">Daftar Produksi</h5>
             {{-- Tombol untuk memicu modal input --}}
             <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addProduksiModal">
                 <i class="bi bi-plus-circle"></i> Catat Produksi Baru
             </button>
         </div>
         <div class="card-body">
-            <p>Tabel ini menampilkan rekap menu yang dibuat (terjual) per transaksi.</p>
 
             <div class="table-responsive">
                 <table id="penjualanAsProduksiTable" class="table table-bordered table-striped" width="100%" cellspacing="0">
@@ -63,7 +62,7 @@
 
                     <div class="mb-3">
                         <label for="menu_select" class="form-label">Menu Produk</label>
-                        <select class="form-select" id="menu_select" name="menu_id" required>
+                        <select class="form-select select2" id="menu_select" name="menu_id" required>
                             <option value="">-- Pilih Menu --</option>
                             {{-- Opsi akan diisi oleh JavaScript --}}
                         </select>
@@ -104,25 +103,13 @@
 
         // --- 1. INISIALISASI DATATABLES ---
         const table = $('#penjualanAsProduksiTable').DataTable({
-            "processing": true,
+            "processing": false,
             "serverSide": false,
             "ajax": {
                 // Endpoint API yang mengambil data PENJUALAN yang sudah di-JOIN dengan MENU
                 "url": "{{ url('api/penjualan-produksi') }}",
                 "type": "GET",
                 "dataSrc": "data",
-
-                "beforeSend": function() {
-                    Swal.fire({
-                        title: 'Memuat Laporan...', icon: 'info', allowOutsideClick: false, showConfirmButton: false,
-                        didOpen: () => { Swal.showLoading(); }
-                    });
-                },
-                "complete": function() {
-                    if (Swal.isVisible()) {
-                        Swal.close();
-                    }
-                },
                 "error": function(xhr, error, code) {
                     Swal.fire({ icon: 'error', title: 'Gagal Memuat Data', text: 'Terjadi kesalahan saat mengambil data laporan: ' + code });
                 }
@@ -149,9 +136,6 @@
                 }
             ],
             "dom": 'lBfrtip',
-            "language": {
-                "url": "https://cdn.datatables.net/plug-ins/1.13.7/i18n/id.json"
-            }
         });
 
 
