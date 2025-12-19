@@ -316,6 +316,9 @@ $(document).ready(function () {
     // ======================================
     //  DATATABLE
     // ======================================
+    // ======================================
+    //  DATATABLE
+    // ======================================
     let table = $('#bahanTable').DataTable({
         // responsive: true, // Dinonaktifkan agar scroll horizontal
         ajax: "{{ url('api/bahan') }}",
@@ -351,7 +354,40 @@ $(document).ready(function () {
                     <button class="btn btn-danger btn-sm btnHapus" data-id="${row.id}">Hapus</button>
                 `
             }
-        ]
+        ],
+        initComplete: function(settings, json) {
+            // --- AUTO OPEN FROM URL PARAM (MOVED HERE FOR ROBUSTNESS) ---
+            const urlParams = new URLSearchParams(window.location.search);
+            const openDetailId = urlParams.get('open_detail');
+            
+            if (openDetailId) {
+                // 1. Filter table to show ONLY this specific ID (column 0 is hidden ID)
+                //    This ensures the row is present in the DOM even if it was on page 2
+                table.column(0).search('^' + openDetailId + '$', true, false).draw();
+
+                // 2. Click the button once drawn
+                setTimeout(() => {
+                    let btn = $(`.btnDetail[data-id='${openDetailId}']`);
+                    if (btn.length) {
+                        btn.click();
+                        
+                        // Clean URL so refresh doesn't trigger it again
+                        const newUrl = window.location.pathname;
+                        window.history.replaceState({}, document.title, newUrl);
+                    } else {
+                        console.warn("Target row not found for ID:", openDetailId);
+                        // Reset filter if not found
+                        table.column(0).search('').draw();
+                    }
+                }, 500); // Small delay to allow draw to finish
+            }
+        }
+    });
+
+    // Reset Filter when modal is closed so user sees all data again
+    $('#modalDetailBatch').on('hidden.bs.modal', function () {
+        // Clear the specific ID search on column 0
+        table.column(0).search('').draw();
     });
 
 
@@ -602,19 +638,8 @@ $(document).ready(function () {
         });
     });
 
-    // --- AUTO OPEN FROM URL PARAM ---
-    const urlParams = new URLSearchParams(window.location.search);
-    const openDetailId = urlParams.get('open_detail');
-    if (openDetailId) {
-        setTimeout(() => {
-            let btn = $(`.btnDetail[data-id='${openDetailId}']`);
-            if (btn.length) {
-                btn.click();
-            }
-            // Clean URL
-            window.history.replaceState({}, document.title, window.location.pathname);
-        }, 1000); 
-    }
+    // (Old auto-open logic removed)
+
 
 });
 </script>
