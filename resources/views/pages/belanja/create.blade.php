@@ -71,8 +71,12 @@
     <select id="unique-bahan-options">
         <option value="">-- Pilih Bahan --</option>
         @forelse ($bahan as $b)
-            <option value="{{ $b->id }}" data-satuan="{{ $b->satuan }}" data-harga="{{ $b->harga_satuan ?? 0 }}">
-                {{ $b->nama }} (Stok: {{ $b->stok }})
+            <option value="{{ $b->id }}" 
+                data-satuan="{{ $b->satuan }}" 
+                data-satuan-beli="{{ $b->satuan_beli ?? $b->satuan }}"
+                data-jumlah-satuan="{{ $b->jumlah_satuan ?? 1 }}"
+                data-harga="{{ $b->harga_satuan ?? 0 }}">
+                {{ $b->nama }} (Stok: {{ $b->stok }} {{ $b->satuan }})
             </option>
         @empty
             <option value="">-- TIDAK ADA DATA BAHAN (Hubungi Admin) --</option>
@@ -154,7 +158,11 @@
                 row.remove();
                 calculateGrandTotal();
             } else {
-                alert("Minimal satu item harus ada.");
+                Swal.fire({
+                    icon: 'warning',
+                    title: 'Perhatian',
+                    text: 'Minimal satu item harus ada.'
+                });
             }
         }
 
@@ -169,20 +177,34 @@
 
             const option = select.options[select.selectedIndex];
             
-            // Update Satuan
+            // Update Satuan & Hint
             if (option.value) {
-                satuanBadge.innerText = option.getAttribute('data-satuan');
+                let satuanMain = option.getAttribute('data-satuan'); // e.g. ml
+                let satuanBeli = option.getAttribute('data-satuan-beli'); // e.g. Galon
+                let factor = parseInt(option.getAttribute('data-jumlah-satuan')) || 1;
+
+                if (factor > 1) {
+                    satuanBadge.innerHTML = `<span class="badge bg-info text-dark">${satuanBeli}</span><br><small class="text-muted" style="font-size: 0.65em;">1 ${satuanBeli} = ${factor} ${satuanMain}</small>`;
+                } else {
+                    satuanBadge.innerHTML = `<span class="badge bg-secondary">${satuanMain}</span>`;
+                }
+                
+                // Price Calculation (Input is in Buy Unit)
+                // Existing data-harga is Price Per Main Unit (e.g. per ml)
+                // So Price Per input = Price Per Main Unit * Factor
+                const pricePerSmall = parseFloat(option.getAttribute('data-harga')) || 0;
+                const pricePerBuy = pricePerSmall * factor;
+                const jumlah = parseFloat(jumlahInput.value) || 0;
+                const subtotal = pricePerBuy * jumlah;
+
+                estPriceInput.value = formatRupiah(subtotal);
+                estPriceInput.setAttribute('data-raw', subtotal); 
+
             } else {
                 satuanBadge.innerText = '--';
+                estPriceInput.value = 0;
+                estPriceInput.setAttribute('data-raw', 0);
             }
-
-            // Calc Price
-            const price = parseFloat(option.getAttribute('data-harga')) || 0;
-            const jumlah = parseFloat(jumlahInput.value) || 0;
-            const subtotal = price * jumlah;
-
-            estPriceInput.value = formatRupiah(subtotal);
-            estPriceInput.setAttribute('data-raw', subtotal); // Store number for grand total
 
             calculateGrandTotal();
         }

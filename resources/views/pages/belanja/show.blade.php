@@ -87,7 +87,13 @@
                                 @foreach($belanja->details as $index => $d)
                                 <tr>
                                     <td>{{ $index + 1 }}</td>
-                                    <td>{{ $d->bahan->nama }} ({{ $d->bahan->satuan }})</td>
+                                    <td>
+                                        @php
+                                            $sBeli = $d->bahan->satuan_beli ?? $d->bahan->satuan;
+                                        @endphp
+                                        <strong>{{ $d->bahan->nama }}</strong> <br>
+                                        <span class="badge bg-light text-dark border">{{ $sBeli }}</span>
+                                    </td>
                                     <td>
                                         {{ $d->jumlah_estimasi }} x {{ number_format($d->harga_satuan_estimasi, 0, ',', '.') }}<br>
                                         <strong>= Rp {{ number_format($d->subtotal_estimasi, 0, ',', '.') }}</strong>

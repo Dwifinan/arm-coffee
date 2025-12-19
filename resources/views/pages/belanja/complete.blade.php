@@ -51,7 +51,21 @@
                                     {{ $d->bahan->nama }}
                                     <input type="hidden" name="items[{{ $d->id }}][id]" value="{{ $d->id }}">
                                 </td>
-                                <td>{{ $d->bahan->satuan }}</td>
+                                <td>
+                                    @php
+                                        $satuanBeli = $d->bahan->satuan_beli ?? $d->bahan->satuan;
+                                        $factor = $d->bahan->jumlah_satuan ?? 1;
+                                    @endphp
+                                    
+                                    <span class="badge {{ $factor > 1 ? 'bg-info text-dark' : 'bg-secondary' }}">
+                                        {{ $satuanBeli }}
+                                    </span>
+                                    @if($factor > 1)
+                                        <div class="small text-muted" style="font-size: 0.7em;">
+                                            (Isi {{ $factor }} {{ $d->bahan->satuan }})
+                                        </div>
+                                    @endif
+                                </td>
                                 <td>{{ $d->jumlah_estimasi }}</td>
                                 <td>
                                     <input type="number" name="items[{{ $d->id }}][jumlah_akhir]" class="form-control jumlah-input" value="{{ old("items.{$d->id}.jumlah_akhir", $d->jumlah_estimasi) }}" min="1" required oninput="calculateTotal()">
@@ -60,7 +74,7 @@
                                     <input type="text" name="items[{{ $d->id }}][subtotal_akhir]" class="form-control price-input" value="{{ old("items.{$d->id}.subtotal_akhir", number_format($d->subtotal_estimasi, 0, ',', '.')) }}" required>
                                 </td>
                                 <td>
-                                    <input type="date" name="items[{{ $d->id }}][expired]" class="form-control" value="{{ old("items.{$d->id}.expired") }}" required>
+                                    <input type="date" name="items[{{ $d->id }}][expired]" class="form-control" value="{{ old("items.{$d->id}.expired") }}">
                                 </td>
                             </tr>
                             @endforeach

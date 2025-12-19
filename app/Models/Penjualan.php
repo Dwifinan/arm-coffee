@@ -6,7 +6,7 @@ use Illuminate\Database\Eloquent\Model;
 class Penjualan extends Model
 {
     protected $table = 'penjualan';
-    protected $fillable = ['kode_transaksi', 'menu_id', 'jumlah', 'total_harga'];
+    protected $fillable = ['kode_transaksi', 'batch_id', 'menu_id', 'jumlah', 'total_harga'];
 
     // Relasi: Setiap penjualan merujuk pada satu menu
     public function menu()

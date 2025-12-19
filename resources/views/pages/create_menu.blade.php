@@ -52,46 +52,48 @@
 
                 {{-- Bagian 2: Detail Bahan (Tabel Dinamis) --}}
                 <div class="col-12">
-                    <table class="table table-bordered" id="bahan-table">
-                        <thead>
-                            <tr>
-                                <th style="width: 50%">Bahan Baku</th>
-                                <th style="width: 30%">Jumlah Digunakan</th>
-                                <th style="width: 10%">Satuan</th>
-                                <th style="width: 10%">Aksi</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {{-- Baris Bahan Pertama (Template) --}}
-                            <tr id="bahan-row-0">
-                                <td>
-                                    <select name="bahan_id[0]" class="form-select bahan-select select2 @error('bahan_id.0') is-invalid @enderror" data-index="0" required>
-                                        <option value="">Pilih Bahan...</option>
-                                        @foreach ($bahans as $bahan)
-                                            <option value="{{ $bahan->id }}" data-satuan="{{ $bahan->satuan }}" {{ old('bahan_id.0') == $bahan->id ? 'selected' : '' }}>
-                                                {{ $bahan->nama }} ({{ $bahan->kode }})
-                                            </option>
-                                        @endforeach
-                                    </select>
-                                    @error('bahan_id.0')
-                                        <div class="invalid-feedback">{{ $message }}</div>
-                                    @enderror
-                                </td>
-                                <td>
-                                    <input type="number" name="jumlah_bahan[0]" class="form-control @error('jumlah_bahan.0') is-invalid @enderror" value="{{ old('jumlah_bahan.0') }}" min="1" autocomplete="off" required>
-                                    @error('jumlah_bahan.0')
-                                        <div class="invalid-feedback">{{ $message }}</div>
-                                    @enderror
-                                </td>
-                                <td>
-                                    <span class="satuan-display" data-index="0">--</span>
-                                </td>
-                                <td>
-                                    <button type="button" class="btn btn-danger btn-sm" onclick="removeBahanRow(0)" disabled><i class="bi bi-trash"></i></button>
-                                </td>
-                            </tr>
-                        </tbody>
-                    </table>
+                    <div class="table-responsive">
+                        <table class="table table-bordered" id="bahan-table">
+                            <thead>
+                                <tr>
+                                    <th style="width: 50%">Bahan Baku</th>
+                                    <th style="width: 30%">Jumlah Digunakan</th>
+                                    <th style="width: 10%">Satuan</th>
+                                    <th style="width: 10%">Aksi</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {{-- Baris Bahan Pertama (Template) --}}
+                                <tr id="bahan-row-0">
+                                    <td>
+                                        <select name="bahan_id[0]" class="form-select bahan-select select2 @error('bahan_id.0') is-invalid @enderror" data-index="0" required>
+                                            <option value="">Pilih Bahan...</option>
+                                            @foreach ($bahans as $bahan)
+                                                <option value="{{ $bahan->id }}" data-satuan="{{ $bahan->satuan }}" {{ old('bahan_id.0') == $bahan->id ? 'selected' : '' }}>
+                                                    {{ $bahan->nama }} ({{ $bahan->kode }})
+                                                </option>
+                                            @endforeach
+                                        </select>
+                                        @error('bahan_id.0')
+                                            <div class="invalid-feedback">{{ $message }}</div>
+                                        @enderror
+                                    </td>
+                                    <td>
+                                        <input type="number" name="jumlah_bahan[0]" class="form-control @error('jumlah_bahan.0') is-invalid @enderror" value="{{ old('jumlah_bahan.0') }}" min="1" autocomplete="off" required>
+                                        @error('jumlah_bahan.0')
+                                            <div class="invalid-feedback">{{ $message }}</div>
+                                        @enderror
+                                    </td>
+                                    <td>
+                                        <span class="satuan-display" data-index="0">--</span>
+                                    </td>
+                                    <td>
+                                        <button type="button" class="btn btn-danger btn-sm" onclick="removeBahanRow(0)" disabled><i class="bi bi-trash"></i></button>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
                     <button type="button" class="btn btn-success btn-sm" id="add-bahan-btn">
                         <i class="bi bi-plus-circle"></i> Tambah Bahan
                     </button>

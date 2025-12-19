@@ -54,7 +54,20 @@
                                     <td class="fw-bold">{{ $b->kode }}</td>
                                     <td>{{ $b->created_at->format('d M Y') }}</td>
                                     <td>{{ $b->userRequest->username ?? 'Unknown' }}</td>
-                                    <td>{{ $b->details->count() }} Item</td>
+                                    <td>
+                                        <ul class="list-unstyled mb-0 small">
+                                            @foreach($b->details->take(3) as $d)
+                                                @php
+                                                    $sBeli = $d->bahan->satuan_beli ?? $d->bahan->satuan;
+                                                    // $d->jumlah_estimasi is already in Buy Unit due to Controller Logic
+                                                @endphp
+                                                <li>- {{ $d->bahan->nama }}: {{ $d->jumlah_estimasi }} {{ $sBeli }}</li>
+                                            @endforeach
+                                            @if($b->details->count() > 3)
+                                                <li class="text-muted">+ {{ $b->details->count() - 3 }} more...</li>
+                                            @endif
+                                        </ul>
+                                    </td>
                                     <td>Rp {{ number_format($b->total_estimasi, 0, ',', '.') }}</td>
                                     <td>
                                         @if($b->status == 'pending')
@@ -75,12 +88,12 @@
                                         @endif
 
                                         @if(auth()->user()->role === 'owner' && $b->status == 'pending')
-                                            <form action="{{ route('belanja.destroy', $b->id) }}" method="POST" class="d-inline" onsubmit="return confirm('Hapus request ini?');">
+                                            <button type="button" class="btn btn-danger btn-sm delete-btn" data-id="{{ $b->id }}" title="Hapus">
+                                                <i class="bi bi-trash"></i>
+                                            </button>
+                                            <form id="delete-form-{{ $b->id }}" action="{{ route('belanja.destroy', $b->id) }}" method="POST" style="display: none;">
                                                 @csrf
                                                 @method('DELETE')
-                                                <button class="btn btn-danger btn-sm" title="Hapus">
-                                                    <i class="bi bi-trash"></i>
-                                                </button>
                                             </form>
                                         @endif
                                     </td>
@@ -99,4 +112,49 @@
 
     </div>
 </section>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Delete Confirmation
+        document.querySelectorAll('.delete-btn').forEach(btn => {
+            btn.addEventListener('click', function() {
+                const id = this.getAttribute('data-id');
+                Swal.fire({
+                    title: 'Hapus Request?',
+                    text: "Data yang dihapus tidak bisa dikembalikan!",
+                    icon: 'warning',
+                    showCancelButton: true,
+                    confirmButtonColor: '#d33',
+                    cancelButtonColor: '#3085d6',
+                    confirmButtonText: 'Ya, Hapus!',
+                    cancelButtonText: 'Batal'
+                }).then((result) => {
+                    if (result.isConfirmed) {
+                        document.getElementById('delete-form-' + id).submit();
+                    }
+                });
+            });
+        });
+
+        // Success Alert
+        @if(session('success'))
+            Swal.fire({
+                icon: 'success',
+                title: 'Berhasil',
+                text: "{{ session('success') }}",
+                timer: 3000,
+                showConfirmButton: false
+            });
+        @endif
+
+        // Error Alert
+        @if(session('error'))
+            Swal.fire({
+                icon: 'error',
+                title: 'Gagal',
+                text: "{{ session('error') }}"
+            });
+        @endif
+    });
+</script>
 @endsection

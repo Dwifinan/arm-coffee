@@ -28,22 +28,24 @@
     </div>
 
     <div class="card-body p-3">
-        <table id="bahanTable" class="display table table-bordered" style="width: 100%">
-            <thead class="table-light">
-                <tr>
-                    <th>ID</th>
-                    <th>Kode</th>
-                    <th>Nama</th>
-                    <th>Satuan</th>
-                    <th>Harga</th>
-                    <th>Stok</th>
-                    <th>Stok Minimal</th>
-                    <th>Status</th>
-                    <th>Aksi</th>
-                </tr>
-            </thead>
-            <tbody></tbody>
-        </table>
+        <div class="table-responsive">
+            <table id="bahanTable" class="display table table-bordered" style="width: 100%">
+                <thead class="table-light">
+                    <tr>
+                        <th>ID</th>
+                        <th>Kode</th>
+                        <th>Nama</th>
+                        <th>Satuan</th>
+                        <th>Harga</th>
+                        <th>Stok</th>
+                        <th>Stok Minimal</th>
+                        <th>Status</th>
+                        <th>Aksi</th>
+                    </tr>
+                </thead>
+                <tbody></tbody>
+            </table>
+        </div>
     </div>
 </div>
 
@@ -196,6 +198,86 @@
   </div>
 </div>
 
+<!-- =================================================================== -->
+<!--                        MODAL DETAIL BATCH (EXPIRY)                  -->
+<!-- =================================================================== -->
+<div class="modal fade" id="modalDetailBatch">
+  <div class="modal-dialog modal-lg">
+    <div class="modal-content">
+
+      <div class="modal-header">
+        <h5 class="modal-title">Detail Batch & Expired</h5>
+        <button class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+
+      <div class="modal-body">
+        
+        <ul class="nav nav-tabs mb-3" id="detailTabs" role="tablist">
+            <li class="nav-item" role="presentation">
+                <button class="nav-link active" id="fefo-tab" data-bs-toggle="tab" data-bs-target="#fefo" type="button" role="tab">Batch & Expiry (FEFO)</button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link" id="history-tab" data-bs-toggle="tab" data-bs-target="#history" type="button" role="tab">Kartu Stok (Riwayat)</button>
+            </li>
+        </ul>
+
+        <div class="tab-content" id="detailTabsContent">
+            <!-- TAB 1: FEFO BATCHES -->
+            <div class="tab-pane fade show active" id="fefo" role="tabpanel">
+                <div class="table-responsive">
+                    <table class="table table-bordered table-hover align-middle">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Tgl Masuk</th>
+                                <th>Expired</th>
+                                <th>Awal</th>
+                                <th>Sisa (FEFO)</th>
+                                <th>Status</th>
+                                <th>Aksi</th>
+                            </tr>
+                        </thead>
+                        <tbody id="bodyFefo">
+                            <!-- Loaded via AJAX -->
+                        </tbody>
+                    </table>
+                </div>
+                <div class="alert alert-info py-2 small">
+                    <i class="bi bi-info-circle me-1"></i> Sistem akan memotong stok dari <b>Expired Terdekat</b> (Baris Paling Atas) yang masih memiliki Sisa > 0.
+                </div>
+            </div>
+
+            <!-- TAB 2: HISTORY -->
+            <div class="tab-pane fade" id="history" role="tabpanel">
+                <div class="table-responsive">
+                    <table class="table table-bordered table-striped" id="tableBatch">
+                        <thead>
+                            <tr>
+                                <th>Waktu</th>
+                                <th>Tipe</th>
+                                <th>Jumlah</th>
+                                <th>Keterangan</th>
+                                <th>Ref</th>
+                            </tr>
+                        </thead>
+                        <tbody id="bodyBatch">
+                            <!-- Data loaded via AJAX -->
+                        </tbody>
+                    </table>
+                </div>
+                <p class="text-muted small mt-2">* Data stok ditampilkan berdasarkan riwayat belanja (Bahan Masuk).</p>
+            </div>
+        </div>
+
+      </div>
+
+      <div class="modal-footer">
+        <button class="btn btn-secondary" data-bs-dismiss="modal">Tutup</button>
+      </div>
+
+    </div>
+  </div>
+</div>
+
 @endsection
 
 
@@ -235,13 +317,22 @@ $(document).ready(function () {
     //  DATATABLE
     // ======================================
     let table = $('#bahanTable').DataTable({
+        // responsive: true, // Dinonaktifkan agar scroll horizontal
         ajax: "{{ url('api/bahan') }}",
         columns: [
             { data: "id", visible: false },
             { data: "kode" },
             { data: "nama" },
             { data: "satuan" },
-            { data: "harga_satuan" },
+            { 
+                data: "harga_persatuan",
+                render: function(data, type, row) {
+                    let price = parseInt(data) || 0;
+                    let fmt = price.toLocaleString('id-ID');
+                    let unit = row.satuan_beli ? row.satuan_beli : row.satuan; // Use Buy Unit if avail
+                    return `Rp ${fmt} <small class="text-muted">/ ${unit}</small>`;
+                }
+            },
             { data: "stok" },
             { data: "stok_minimal" },
             {
@@ -255,7 +346,8 @@ $(document).ready(function () {
             {
                 data: null,
                 render: row => `
-                    <button class="btn btn-warning btn-sm btnEdit" data-id="${row.id}">Edit</button>
+                    <button class="btn btn-info btn-sm btnDetail me-1" data-id="${row.id}" title="Lihat Batch"><i class="bi bi-eye"></i></button>
+                    <button class="btn btn-warning btn-sm btnEdit me-1" data-id="${row.id}">Edit</button>
                     <button class="btn btn-danger btn-sm btnHapus" data-id="${row.id}">Hapus</button>
                 `
             }
@@ -350,6 +442,179 @@ $(document).ready(function () {
         });
 
     });
+
+    // ==================================================
+    // DETAIL BATCH (History)
+    // ==================================================
+    // ==================================================
+    // DETAIL BATCH (History / KARTU STOK)
+    // ==================================================
+    // ==================================================
+    // DETAIL BATCH (History / KARTU STOK & FEFO)
+    // ==================================================
+    $(document).on('click', '.btnDetail', function(){
+        let id = $(this).data('id');
+        $('#bodyBatch').html('<tr><td colspan="5" class="text-center">Loading Riwayat...</td></tr>');
+        $('#bodyFefo').html('<tr><td colspan="6" class="text-center">Loading Batch...</td></tr>');
+        
+        $('#modalDetailBatch .modal-title').text('Detail & Validasi Stok (FEFO)');
+        $('#modalDetailBatch').modal('show');
+
+        // 1. LOAD HISTORY (Existing)
+        $.get("{{ url('api/bahan') }}/" + id + "/history", function(res){
+            let rows = '';
+            if(res.data.length === 0){
+                rows = '<tr><td colspan="5" class="text-center">Belum ada riwayat stok.</td></tr>';
+            } else {
+                res.data.forEach(item => {
+                    let isMasuk = item.type === 'Masuk';
+                    let typeBadge = isMasuk ? '<span class="badge bg-success">Masuk</span>' : '<span class="badge bg-danger">Keluar</span>';
+                    let d = new Date(item.created_at);
+                    let tgl = d.toLocaleDateString('id-ID', {day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute:'2-digit'});
+                    let bgClass = isMasuk ? '' : 'table-light';
+
+                    rows += `<tr class="${bgClass}">
+                        <td>${tgl}</td>
+                        <td>${typeBadge}</td>
+                        <td><span class="${isMasuk ? 'text-success fw-bold' : 'text-danger fw-bold'}">${isMasuk ? '+' : '-'}${item.jumlah}</span></td>
+                        <td>${item.keterangan || '-'}</td>
+                        <td><small class="text-muted"><i class="bi bi-clock"></i></small></td>
+                    </tr>`;
+                });
+            }
+            $('#bodyBatch').html(rows);
+        });
+
+        // 2. LOAD ACTIVE BATCHES (FEFO PROOF)
+        $.get("{{ url('api/bahan') }}/" + id + "/batches", function(res){
+            let rows = '';
+            let today = new Date();
+            today.setHours(0,0,0,0);
+
+            if(res.data.length === 0){
+                rows = '<tr><td colspan="6" class="text-center">Belum ada data batch pembelian.</td></tr>';
+            } else {
+                res.data.forEach(batch => {
+                    let dMasuk = new Date(batch.created_at);
+                    let tglMasuk = dMasuk.toLocaleDateString('id-ID', {day: 'numeric', month: 'short', year: '2-digit'});
+                    
+                    let dExp = new Date(batch.expired);
+                    let tglExp = dExp.toLocaleDateString('id-ID', {day: 'numeric', month: 'short', year: 'numeric'});
+                    
+                    // Logic Status
+                    let isExpired = dExp < today;
+                    let isEmpty = batch.sisa_stok <= 0;
+                    
+                    let statusBadge = '';
+                    let rowClass = '';
+
+                    if (isEmpty) {
+                        statusBadge = '<span class="badge bg-secondary">Habis Terpakai</span>';
+                        rowClass = 'table-secondary opacity-75';
+                    } else if (isExpired) {
+                        statusBadge = '<span class="badge bg-danger">EXPIRED</span>';
+                        rowClass = 'table-danger'; // Highlight Expired
+                    } else {
+                        // Cek Near Expired (3 days)
+                        let diffTime = dExp - today;
+                        let diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)); 
+                        if (diffDays <= 3 && diffDays >= 0) {
+                            statusBadge = '<span class="badge bg-warning text-dark">Hampir Expired (' + diffDays + ' hr)</span>';
+                            rowClass = 'table-warning';
+                        } else {
+                            statusBadge = '<span class="badge bg-success">Active</span>';
+                        }
+                    }
+
+                    // Resolve Button (Only if Expired/Issues and Not Resolved?)
+                    // Logic: You can resolve manually if you want to trash it
+                    let btnResolve = '';
+                    if (!isEmpty) {
+                        btnResolve = `<button class="btn btn-sm btn-outline-danger btnResolve" data-id="${batch.id}" data-stok="${batch.sisa_stok}" title="Atur / Buang"><i class="bi bi-trash"></i></button>`;
+                    }
+
+                    rows += `<tr class="${rowClass}">
+                        <td>${tglMasuk}</td>
+                        <td class="fw-bold">${tglExp}</td>
+                        <td>${batch.jumlah}</td>
+                        <td><span class="fw-bold" style="font-size:1.1em">${batch.sisa_stok}</span></td>
+                        <td>${statusBadge}</td>
+                        <td>${btnResolve}</td>
+                    </tr>`;
+                });
+            }
+            $('#bodyFefo').html(rows);
+        });
+    });
+
+    // --- HANDLE RESOLVE BUTTON ---
+    $(document).on('click', '.btnResolve', function() {
+        let batchId = $(this).data('id');
+        let currentStock = $(this).data('stok'); // Optional: show max logic
+        
+        Swal.fire({
+            title: 'Atur Barang Expired',
+            html: `
+                <div class="text-start">
+                    <p class="mb-2">Barang ini sudah kadaluarsa.</p>
+                    <label class="form-label fw-bold">Berapa banyak yang dibuang?</label>
+                    <input type="number" id="qtyDisposed" class="form-control form-control-lg border-primary" value="0" min="0">
+                    <div class="form-text text-muted mt-1">
+                        <small>
+                        <i class="bi bi-info-circle"></i> Isi <b>0</b> jika barang sudah habis terpakai.<br>
+                        <i class="bi bi-trash"></i> Isi <b>Angka</b> jika barang fisik dibuang (Stok akan berkurang).
+                        </small>
+                    </div>
+                </div>
+            `,
+            showCancelButton: true,
+            confirmButtonText: 'Simpan',
+            cancelButtonText: 'Batal',
+            focusConfirm: false, // Prevent auto-focus on Confirm button, allowing input focus interaction if needed
+            didOpen: () => {
+                const input = Swal.getPopup().querySelector('#qtyDisposed');
+                input.focus();
+                input.select(); // Select all text so user can type immediately
+            },
+            preConfirm: () => {
+                return document.getElementById('qtyDisposed').value;
+            }
+        }).then((result) => {
+            if (result.isConfirmed) {
+                let qty = result.value;
+                $.ajax({
+                    url: "{{ url('api/bahan-masuk') }}/" + batchId + "/resolve",
+                    method: 'POST',
+                    data: { 
+                        _token: "{{ csrf_token() }}",
+                        qty_disposed: qty 
+                    },
+                    success: function(res) {
+                        Swal.fire('Berhasil', 'Status expired telah diselesaikan.', 'success');
+                        $('#modalDetailBatch').modal('hide');
+                        table.ajax.reload();
+                    },
+                    error: function(xhr) {
+                        Swal.fire('Error', 'Gagal memproses data.', 'error');
+                    }
+                });
+            }
+        });
+    });
+
+    // --- AUTO OPEN FROM URL PARAM ---
+    const urlParams = new URLSearchParams(window.location.search);
+    const openDetailId = urlParams.get('open_detail');
+    if (openDetailId) {
+        setTimeout(() => {
+            let btn = $(`.btnDetail[data-id='${openDetailId}']`);
+            if (btn.length) {
+                btn.click();
+            }
+            // Clean URL
+            window.history.replaceState({}, document.title, window.location.pathname);
+        }, 1000); 
+    }
 
 });
 </script>

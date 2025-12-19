@@ -2,6 +2,7 @@
 
     <div class="d-flex align-items-center justify-content-between">
       <a href="{{ url('/') }}" class="logo d-flex align-items-center">
+        <img src="{{ asset('assets/img/logo.jpg') }}" alt="">
         <span class="d-none d-lg-block">Arm Coffee</span>
       </a>
       <i class="bi bi-list toggle-sidebar-btn"></i>
@@ -57,6 +58,16 @@
             </li>
 
             <li>
+                <a class="dropdown-item d-flex align-items-center text-danger" href="#" id="resetDemoBtn">
+                    <i class="bi bi-arrow-counterclockwise"></i>
+                    <span>Reset Demo Data</span>
+                </a>
+            </li>
+            <li>
+              <hr class="dropdown-divider">
+            </li>
+
+            <li>
                 <form id="logoutForm" action="{{ route('logout') }}" method="POST" style="display: none;">
                     @csrf
                 </form>
@@ -80,24 +91,64 @@
         const logoutButton = document.getElementById('logoutButton');
         const logoutForm = document.getElementById('logoutForm');
 
-        logoutButton.addEventListener('click', function (e) {
-            e.preventDefault();
+        if(logoutButton){
+            logoutButton.addEventListener('click', function (e) {
+                e.preventDefault();
 
-            Swal.fire({
-                title: 'Yakin ingin logout?',
-                text: "Kamu akan keluar dari akun saat ini.",
-                icon: 'warning',
-                showCancelButton: true,
-                confirmButtonColor: '#3085d6',
-                cancelButtonColor: '#d33',
-                confirmButtonText: 'Ya, Logout',
-                cancelButtonText: 'Batal'
-            }).then((result) => {
-                if (result.isConfirmed) {
-                    logoutForm.submit();
-                }
+                Swal.fire({
+                    title: 'Yakin ingin logout?',
+                    text: "Kamu akan keluar dari akun saat ini.",
+                    icon: 'warning',
+                    showCancelButton: true,
+                    confirmButtonColor: '#3085d6',
+                    cancelButtonColor: '#d33',
+                    confirmButtonText: 'Ya, Logout',
+                    cancelButtonText: 'Batal'
+                }).then((result) => {
+                    if (result.isConfirmed) {
+                        logoutForm.submit();
+                    }
+                });
             });
-        });
+        }
+
+        // RESET DEMO LOGIC
+        const resetDemoBtn = document.getElementById('resetDemoBtn');
+        if(resetDemoBtn){
+            resetDemoBtn.addEventListener('click', function(e){
+                e.preventDefault();
+                Swal.fire({
+                    title: 'Reset Demo?',
+                    text: "Skenario Sabtu akan di-load ulang. Data transaksi akan dihapus.",
+                    icon: 'warning',
+                    showCancelButton: true,
+                    confirmButtonColor: '#d33',
+                    cancelButtonColor: '#3085d6',
+                    confirmButtonText: 'Ya, Reset Data',
+                    cancelButtonText: 'Batal'
+                }).then((result) => {
+                    if (result.isConfirmed) {
+                        Swal.fire({title: 'Sedang Mereset...', allowOutsideClick: false, didOpen: () => Swal.showLoading()});
+                        
+                        fetch("{{ route('demo.reset') }}", {
+                            method: 'POST',
+                            headers: {
+                                'X-CSRF-TOKEN': "{{ csrf_token() }}",
+                                'Content-Type': 'application/json'
+                            }
+                        })
+                        .then(response => response.json())
+                        .then(data => {
+                            if(data.success){
+                                Swal.fire('Berhasil', data.message, 'success').then(() => location.reload());
+                            } else {
+                                Swal.fire('Gagal', data.message, 'error');
+                            }
+                        })
+                        .catch(err => Swal.fire('Error', 'Terjadi kesalahan sistem: ' + err, 'error'));
+                    }
+                })
+            });
+        }
     });
 </script>
-

@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Bahan;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
+use Illuminate\Support\Facades\DB;
 
 class BahanController extends Controller
 {
@@ -208,5 +209,80 @@ public function getBahan()
             // Respon error JSON
             return response()->json(['success' => false, 'message' => 'Gagal menghapus bahan: ' . $e->getMessage()], 500);
         }
+    }
+
+    // ============================
+    // CEK DETAIL BATCH (EXPIRY)
+    // ============================
+    public function getBatches($id)
+    {
+        // Ambil data bahan masuk berdasarkan bahan_id
+        // Urutkan berdasarkan tanggal expired terdekat (ASC)
+        $batches = \App\Models\BahanMasuk::where('bahan_id', $id)
+                    ->orderBy('expired', 'asc')
+                    ->get();
+        
+        return response()->json([
+            'message' => 'success',
+            'data' => $batches
+        ]);
+    }
+
+    // ============================
+    // GET STOCK HISTORY (KARTU STOK)
+    // ============================
+    public function getHistory($id)
+    {
+        $masuk = \App\Models\BahanMasuk::where('bahan_id', $id)
+                    ->select('created_at', 'jumlah', 'expired', DB::raw("'Masuk' as type"), DB::raw("'Pembelian/Stok Awal' as keterangan"))
+                    ->get();
+
+        $keluar = \App\Models\BahanKeluar::where('bahan_id', $id)
+                    ->select('created_at', 'jumlah', 'expired', DB::raw("'Keluar' as type"), DB::raw("'Produksi/Buang' as keterangan"))
+                    ->get();
+
+        // Merge and Sort
+        $history = $masuk->concat($keluar)->sortByDesc('created_at')->values();
+
+        return response()->json([
+            'message' => 'success',
+            'data' => $history
+        ]);
+    }
+
+    public function resolveBatch(Request $request, $id)
+    {
+        $request->validate([
+            'qty_disposed' => 'required|integer|min:0'
+        ]);
+
+        $batch = \App\Models\BahanMasuk::findOrFail($id);
+        $batch->is_resolved = true;
+        $batch->save();
+
+        if ($request->qty_disposed > 0) {
+            $bahan = Bahan::find($batch->bahan_id);
+            if ($bahan) {
+                // Reduce Master Stock
+                $bahan->stok = max(0, $bahan->stok - $request->qty_disposed);
+                $bahan->save();
+
+                // Reduce Sisa Stok on the Batch (FIFO Consistency)
+                $batch->sisa_stok = max(0, $batch->sisa_stok - $request->qty_disposed);
+                $batch->save();
+
+                // Log Bahan Keluar
+                \App\Models\BahanKeluar::create([
+                    'bahan_id' => $bahan->id,
+                    'jumlah' => $request->qty_disposed,
+                    'harga' => 0, // Loss
+                    'harga_satuan' => 0,
+                    'total_harga' => 0,
+                    'expired' => $batch->expired,
+                ]);
+            }
+        }
+
+        return response()->json(['success' => true]);
     }
 }

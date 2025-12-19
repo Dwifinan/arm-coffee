@@ -29,196 +29,350 @@
                 <table id="penjualanAsProduksiTable" class="table table-bordered table-striped" width="100%" cellspacing="0">
                     <thead>
                         <tr>
-                            <th>ID Transaksi</th>
                             <th>Tanggal Produksi</th>
-                            <th>Menu Produk</th>
-                            <th>Jumlah Diproduksi (Terjual)</th>
-                            <th>Total Pendapatan</th>
+                            <th>Total Item Terjual</th>
+                            <th>Total Omset</th>
+                            <th>Aksi</th>
                         </tr>
                     </thead>
-                    <tbody>
-                        {{-- Data akan dimuat oleh DataTables melalui AJAX --}}
-                    </tbody>
+                    <tbody></tbody>
                 </table>
             </div>
         </div>
     </div>
 </section>
 
-
-{{-- ====================================================================== --}}
-{{-- MODAL UNTUK MENAMBAH PRODUKSI/PENJUALAN BARU --}}
-{{-- ====================================================================== --}}
-<div class="modal fade" id="addProduksiModal" tabindex="-1" aria-labelledby="addProduksiModalLabel" aria-hidden="true">
-    <div class="modal-dialog">
+{{-- MODAL DETAIL BATCH --}}
+<div class="modal fade" id="modalDetailBatch" tabindex="-1">
+    <div class="modal-dialog modal-lg">
         <div class="modal-content">
             <div class="modal-header">
-                <h5 class="modal-title" id="addProduksiModalLabel">Catat Penjualan/Produksi Baru</h5>
+                <h5 class="modal-title">Detail Produksi Batch</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <table class="table table-bordered table-sm">
+                    <thead>
+                        <tr>
+                            <th>Menu</th>
+                            <th>Jumlah</th>
+                            <th>Total Harga</th>
+                            {{-- <th>Kode TRX</th> --}}
+                        </tr>
+                    </thead>
+                    <tbody id="detailBatchBody">
+                        <tr><td colspan="3" class="text-center">Loading...</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+{{-- MODAL INPUT (Existing) --}}
+<div class="modal fade" id="addProduksiModal" tabindex="-1" aria-labelledby="addProduksiModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+             {{-- ... existing content ... --}}
+            <div class="modal-header">
+                <h5 class="modal-title" id="addProduksiModalLabel">Catat Produksi Baru (Batch)</h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <form id="addProduksiForm">
                 @csrf
                 <div class="modal-body">
+                    
+                    <p class="small text-muted mb-3">Tambahkan menu yang diproduksi (terjual) di bawah ini.</p>
 
-                    <div class="mb-3">
-                        <label for="menu_select" class="form-label">Menu Produk</label>
-                        <select class="form-select select2" id="menu_select" name="menu_id" required>
-                            <option value="">-- Pilih Menu --</option>
-                            {{-- Opsi akan diisi oleh JavaScript --}}
-                        </select>
-                    </div>
-
-                    <div class="mb-3">
-                        <label for="jumlah_input" class="form-label">Jumlah Produksi (Terjual)</label>
-                        <input type="number" class="form-control" id="jumlah_input" name="jumlah" min="1" required>
-                    </div>
-
-                    <div class="mb-3">
-                        <label for="total_harga_display" class="form-label">Total Harga (Otomatis)</label>
-                        <input type="text" class="form-control" id="total_harga_display" readonly>
-                        {{-- Hidden field untuk mengirim nilai total harga --}}
-                        <input type="hidden" name="total_harga" id="total_harga_hidden">
+                    <div class="table-responsive">
+                        <table class="table table-bordered table-sm" id="produksiTableInput">
+                            <thead class="bg-light">
+                                <tr>
+                                    <th width="45%">Menu</th>
+                                    <th width="20%">Jml</th>
+                                    <th width="30%">Total (Rp)</th>
+                                    <th width="5%"></th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <!-- Rows added via JS -->
+                            </tbody>
+                            <tfoot>
+                                <tr>
+                                    <td colspan="4" class="text-end">
+                                        <button type="button" class="btn btn-sm btn-success" id="addRowBtn">
+                                            <i class="bi bi-plus-circle"></i> Tambah Item
+                                        </button>
+                                    </td>
+                                </tr>
+                            </tfoot>
+                        </table>
                     </div>
 
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Tutup</button>
-                    <button type="submit" class="btn btn-primary" id="saveProduksiBtn">Catat & Simpan</button>
+                    <button type="submit" class="btn btn-primary" id="saveProduksiBtn">Simpan Semua</button>
                 </div>
             </form>
         </div>
     </div>
 </div>
 
-@endsection
+{{-- Master Option for Cloning --}}
+<div style="display: none;">
+    <select id="masterMenuSelect">
+        <option value="">-- Pilih Menu --</option>
+    </select>
+</div>
 
-{{-- --- --}}
+@endsection
 
 @section('scriptjs')
 <script>
-    // Menyimpan daftar menu dan harganya
     let menuData = [];
 
     $(document).ready(function() {
 
-        // --- 1. INISIALISASI DATATABLES ---
+        // --- 1. DATATABLES ---
         const table = $('#penjualanAsProduksiTable').DataTable({
             "processing": false,
             "serverSide": false,
             "ajax": {
-                // Endpoint API yang mengambil data PENJUALAN yang sudah di-JOIN dengan MENU
                 "url": "{{ url('api/penjualan-produksi') }}",
                 "type": "GET",
                 "dataSrc": "data",
                 "error": function(xhr, error, code) {
-                    Swal.fire({ icon: 'error', title: 'Gagal Memuat Data', text: 'Terjadi kesalahan saat mengambil data laporan: ' + code });
+                    Swal.fire({ icon: 'error', title: 'Gagal', text: 'Gagal memuat data: ' + code });
                 }
             },
-
             "columns": [
-                { "data": "kode_transaksi", "title": "ID Transaksi", "defaultContent": "-",
-                    "render": function(data, type, row) {
-                        return data ? data : 'TRX-' + row.id;
+                { "data": "tgl", "title": "Tanggal Produksi",
+                    "render": function(data) { 
+                        return data ? new Date(data).toLocaleDateString('id-ID', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' }) : ''; 
                     }
                 },
-                { "data": "created_at", "title": "Tanggal Produksi",
-                    "render": function(data) {
-                        return data ? new Date(data).toLocaleString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' }) : '';
-                    }
-                },
-                { "data": "menu_nama", "title": "Menu Produk" },
-                { "data": "jumlah", "title": "Jumlah Diproduksi (Terjual)" },
+                { "data": "total_items", "title": "Total Item Terjual" },
+                { "data": "total_pendapatan", "title": "Total Omset", "render": $.fn.dataTable.render.number('.', ',', 0, 'Rp ') },
                 {
-                    "data": "total_harga", "title": "Total Pendapatan",
-                    "render": function(data) {
-                        return 'Rp ' + parseFloat(data).toLocaleString('id-ID');
+                    "data": null, "title": "Aksi",
+                    "render": function(data, type, row) {
+                        if(!row.tgl) return '-';
+                        return `
+                            <button class="btn btn-sm btn-info text-white btnDetailBatch me-1" data-date="${row.tgl}"><i class="bi bi-eye"></i> Detail</button>
+                            <button class="btn btn-sm btn-danger btnHapusBatch" data-date="${row.tgl}"><i class="bi bi-trash"></i> Void Harian</button>
+                        `;
                     }
                 }
             ],
-            "dom": 'lBfrtip',
+            "order": [[0, 'desc']]
+        });
+
+        // --- DETAIL BUTTON CLICK ---
+        $(document).on('click', '.btnDetailBatch', function() {
+            let date = $(this).data('date');
+            
+            // Format date for Header
+            let fmtDate = new Date(date).toLocaleDateString('id-ID', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
+            $('#modalDetailBatch .modal-title').text('Detail Produksi: ' + fmtDate);
+
+            $('#modalDetailBatch').modal('show');
+            $('#detailBatchBody').html('<tr><td colspan="4" class="text-center">Loading Data...</td></tr>');
+
+            $.ajax({
+                url: "{{ url('api/penjualan-produksi') }}/" + date,
+                method: 'GET',
+                success: function(res) {
+                    if(!res.data || res.data.length === 0) {
+                        $('#detailBatchBody').html('<tr><td colspan="3" class="text-center text-danger">Data tidak ditemukan di database.</td></tr>');
+                        return;
+                    }
+
+                    let rows = '';
+                    let totalDaily = 0;
+                    res.data.forEach(item => {
+                        let total = parseFloat(item.total_harga);
+                        totalDaily += total;
+                        let menu = item.menu ? item.menu.nama : 'Menu Terhapus/Unknown';
+                        
+                        // Time
+                        let time = new Date(item.created_at).toLocaleTimeString('id-ID', {hour: '2-digit', minute:'2-digit'});
+
+                        rows += `<tr>
+                            <td>
+                                <strong>${menu}</strong> <br>
+                                <span class="badge bg-light text-dark border">${item.kode_transaksi || '-'}</span>
+                                <small class="text-muted ms-2">${time}</small>
+                            </td>
+                            <td>${item.jumlah}</td>
+                            <td>Rp ${total.toLocaleString('id-ID')}</td>
+                        </tr>`;
+                    });
+                    
+                    // Add Total Row
+                    rows += `
+                        <tr class="table-light fw-bold">
+                            <td colspan="2" class="text-end">Total Hari Ini:</td>
+                            <td>Rp ${totalDaily.toLocaleString('id-ID')}</td>
+                        </tr>
+                    `;
+
+                    $('#detailBatchBody').html(rows);
+                },
+                error: function(xhr) {
+                    $('#detailBatchBody').html(`<tr><td colspan="3" class="text-center text-danger">Error: ${xhr.status} - ${xhr.statusText}</td></tr>`);
+                }
+            });
+        });
+
+        // --- HAPUS / VOID BATCH (DAILY) ---
+        $(document).on('click', '.btnHapusBatch', function() {
+            let date = $(this).data('date');
+            let fmtDate = new Date(date).toLocaleDateString('id-ID', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
+
+            Swal.fire({
+                title: 'Void Produksi Harian?',
+                html: `Anda akan menghapus <b>SEMUA</b> data produksi tanggal <b>${fmtDate}</b>.<br>Stok bahan akan dikembalikan.`,
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#d33',
+                cancelButtonColor: '#3085d6',
+                confirmButtonText: 'Ya, Void Semua',
+                cancelButtonText: 'Batal'
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    $.ajax({
+                        url: "{{ url('api/penjualan-produksi') }}/" + date,
+                        method: 'DELETE',
+                        data: { _token: "{{ csrf_token() }}" },
+                        success: function(res) {
+                            Swal.fire('Berhasil!', res.message, 'success');
+                            table.ajax.reload();
+                        },
+                        error: function(xhr) {
+                            let msg = xhr.responseJSON ? xhr.responseJSON.message : 'Gagal menghapus data.';
+                            Swal.fire('Gagal!', msg, 'error');
+                        }
+                    });
+                }
+            });
         });
 
 
-        // --- 2. FUNGSI UNTUK MENGISI DROPDOWN MENU ---
+        // --- 2. LOAD MENU LIST ---
         function fetchMenuList() {
             $.ajax({
-                url: "{{ url('api/menu-list') }}", // Anda harus membuat endpoint ini
+                url: "{{ url('api/menu-list') }}",
                 method: 'GET',
                 success: function(response) {
-                    menuData = response.data; // Simpan data menu
+                    menuData = response.data;
                     let options = '<option value="">-- Pilih Menu --</option>';
                     menuData.forEach(menu => {
-                        // Tambahkan data harga ke opsi untuk memudahkan perhitungan
-                        options += `<option value="${menu.id}" data-harga="${menu.harga}">${menu.nama} (Rp ${parseFloat(menu.harga).toLocaleString('id-ID')})</option>`;
+                        options += `<option value="${menu.id}" data-harga="${menu.harga}">${menu.nama}</option>`;
                     });
-                    $('#menu_select').html(options);
-                },
-                error: function() {
-                    console.error('Gagal mengambil daftar menu.');
+                    $('#masterMenuSelect').html(options);
                 }
             });
         }
-
-        // Panggil fungsi saat dokumen siap
         fetchMenuList();
 
 
-        // --- 3. LOGIKA PERHITUNGAN HARGA OTOMATIS ---
-        function calculateTotalPrice() {
-            const selectedOption = $('#menu_select option:selected');
-            const hargaSatuan = parseFloat(selectedOption.data('harga')) || 0;
-            const jumlah = parseInt($('#jumlah_input').val()) || 0;
-            const total = hargaSatuan * jumlah;
+        // --- 3. DYNAMIC TABLE LOGIC ---
+        let rowIdx = 0;
 
-            $('#total_harga_hidden').val(total);
-            $('#total_harga_display').val('Rp ' + total.toLocaleString('id-ID'));
+        function addRow() {
+            let i = rowIdx++;
+            let rowHtml = `
+                <tr id="row-${i}">
+                    <td>
+                        <select name="items[${i}][menu_id]" class="form-control form-select-sm menu-select" required>
+                            ${$('#masterMenuSelect').html()}
+                        </select>
+                    </td>
+                    <td>
+                        <input type="number" name="items[${i}][jumlah]" class="form-control form-control-sm jumlah-input" min="1" value="1" required>
+                    </td>
+                    <td>
+                        <input type="text" class="form-control form-control-sm total-display" readonly>
+                        <input type="hidden" name="items[${i}][total_harga]" class="total-hidden">
+                    </td>
+                    <td>
+                        <button type="button" class="btn btn-sm btn-danger remove-row" data-id="${i}"><i class="bi bi-trash"></i></button>
+                    </td>
+                </tr>
+            `;
+            $('#produksiTableInput tbody').append(rowHtml);
+            
+            // Trigger calculation for initial distinct value
+            calculateRow(i);
         }
 
-        // Panggil perhitungan saat menu atau jumlah berubah
-        $('#menu_select, #jumlah_input').on('change keyup', calculateTotalPrice);
+        // Add first row on modal open if empty
+        $('#addProduksiModal').on('show.bs.modal', function(){
+            if($('#produksiTableInput tbody tr').length === 0){
+                addRow();
+            }
+        });
+
+        $('#addRowBtn').click(addRow);
+
+        $(document).on('click', '.remove-row', function(){
+            let id = $(this).data('id');
+            $(`#row-${id}`).remove();
+        });
+
+        // Calculation Logic
+        $(document).on('change', '.menu-select', function(){
+            let row = $(this).closest('tr');
+            calculateRowFromTr(row);
+        });
+
+        $(document).on('input', '.jumlah-input', function(){
+            let row = $(this).closest('tr');
+            calculateRowFromTr(row);
+        });
+
+        function calculateRow(idx) {
+            let row = $(`#row-${idx}`);
+            calculateRowFromTr(row);
+        }
+
+        function calculateRowFromTr(row) {
+            let price = parseFloat(row.find('.menu-select option:selected').data('harga')) || 0;
+            let qty = parseInt(row.find('.jumlah-input').val()) || 0;
+            let total = price * qty;
+
+            row.find('.total-display').val(total.toLocaleString('id-ID'));
+            row.find('.total-hidden').val(total);
+        }
 
 
-        // --- 4. SUBMIT FORM (CATAT PRODUKSI) ---
+        // --- 4. SUBMIT FORM ---
         $('#addProduksiForm').on('submit', function(e) {
             e.preventDefault();
 
             const formData = $(this).serialize();
 
             Swal.fire({
-                title: 'Sedang Menyimpan...',
-                icon: 'info',
-                allowOutsideClick: false,
-                showConfirmButton: false,
-                didOpen: () => { Swal.showLoading(); }
+                title: 'Sedang Memproses...',
+                text: 'Mencatat produksi dan mengurangi stok...',
+                didOpen: () => Swal.showLoading()
             });
 
             $.ajax({
-                url: "{{ url('api/penjualan') }}", // Endpoint untuk menyimpan data penjualan/produksi
+                url: "{{ url('api/penjualan') }}",
                 method: 'POST',
                 data: formData,
                 success: function(response) {
-                    Swal.fire({
-                        icon: 'success',
-                        title: 'Berhasil!',
-                        text: 'Catatan produksi/penjualan berhasil ditambahkan dan stok bahan baku sudah dikurangi.',
-                        timer: 2000
-                    });
-
+                    Swal.fire('Berhasil!', response.message, 'success');
                     $('#addProduksiModal').modal('hide');
-                    table.ajax.reload(null, false); // Muat ulang DataTables
-                    $('#addProduksiForm')[0].reset(); // Reset form
-                    $('#total_harga_display').val(''); // Kosongkan display harga
+                    table.ajax.reload();
+                    $('#produksiTableInput tbody').empty(); // Clear rows
+                    addRow(); // Add fresh row
                 },
                 error: function(xhr) {
-                    let errorMessage = 'Gagal menyimpan data.';
-                    if (xhr.responseJSON && xhr.responseJSON.message) {
-                        errorMessage += '<br>' + xhr.responseJSON.message;
-                    }
-                    Swal.fire({
-                        icon: 'error',
-                        title: 'Kesalahan!',
-                        html: errorMessage,
-                    });
+                    let msg = xhr.responseJSON ? xhr.responseJSON.message : 'Terjadi kesalahan server.';
+                    Swal.fire('Gagal!', msg, 'error');
                 }
             });
         });

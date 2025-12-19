@@ -30,30 +30,32 @@
 
             <h5 class="card-title mt-4">Bahan Baku yang Dibutuhkan</h5>
 
-            <table class="table table-bordered">
-                <thead>
-                    <tr>
-                        <th style="width: 5%">#</th>
-                        <th style="width: 50%">Bahan Baku</th>
-                        <th style="width: 25%">Jumlah</th>
-                        <th style="width: 20%">Satuan</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    @forelse ($menu->komposisi as $detail)
-                    <tr>
-                        <td>{{ $loop->iteration }}</td>
-                        <td>{{ $detail->bahan->nama }} ({{ $detail->bahan->kode }})</td>
-                        <td>{{ $detail->jumlah_bahan }}</td>
-                        <td>{{ $detail->bahan->satuan }}</td>
-                    </tr>
-                    @empty
-                    <tr>
-                        <td colspan="4" class="text-center">Tidak ada bahan baku yang terdaftar untuk menu ini.</td>
-                    </tr>
-                    @endforelse
-                </tbody>
-            </table>
+            <div class="table-responsive">
+                <table class="table table-bordered">
+                    <thead>
+                        <tr>
+                            <th style="width: 5%">#</th>
+                            <th style="width: 50%">Bahan Baku</th>
+                            <th style="width: 25%">Jumlah</th>
+                            <th style="width: 20%">Satuan</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @forelse ($menu->komposisi as $detail)
+                        <tr>
+                            <td>{{ $loop->iteration }}</td>
+                            <td>{{ $detail->bahan->nama }} ({{ $detail->bahan->kode }})</td>
+                            <td>{{ $detail->jumlah_bahan }}</td>
+                            <td>{{ $detail->bahan->satuan }}</td>
+                        </tr>
+                        @empty
+                        <tr>
+                            <td colspan="4" class="text-center">Tidak ada bahan baku yang terdaftar untuk menu ini.</td>
+                        </tr>
+                        @endforelse
+                    </tbody>
+                </table>
+            </div>
 
             <div class="mt-4">
                 <a href="{{ route('menu.edit', $menu->id) }}" class="btn btn-warning"><i class="bi bi-pencil"></i> Edit Menu</a>

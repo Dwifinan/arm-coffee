@@ -39,6 +39,7 @@ Route::middleware('auth')->group(function () {
     // --- BELANJA (Purchasing) ---
     Route::prefix('belanja')->name('belanja.')->group(function () {
         Route::get('/riwayat', [BelanjaController::class, 'riwayat'])->name('riwayat'); // Must be before {id}
+        Route::post('/auto-request', [BelanjaController::class, 'autoRequestCritical'])->name('auto-request'); // New Auto Request
         Route::get('/', [BelanjaController::class, 'index'])->name('index');
         Route::get('/create', [BelanjaController::class, 'create'])->name('create');
         Route::post('/', [BelanjaController::class, 'store'])->name('store');
@@ -74,7 +75,11 @@ Route::middleware('auth')->group(function () {
         Route::get('/{menu}', [MenuController::class, 'show'])->name('show'); // Detail Menu
         Route::get('/{menu}/edit', [MenuController::class, 'edit'])->name('edit'); // Form Edit Menu
         Route::put('/{menu}', [MenuController::class, 'update'])->name('update'); // Update Menu & Komposisi
+        Route::put('/{menu}', [MenuController::class, 'update'])->name('update'); // Update Menu & Komposisi
     });
+
+    // --- DEMO UTILITIES ---
+    Route::post('/demo/reset', [App\Http\Controllers\DemoController::class, 'reset'])->name('demo.reset');
 });
 
 
@@ -91,14 +96,18 @@ Route::prefix('api')->middleware('auth')->group(function () {
     Route::get('/bahan/{id}', [BahanController::class, 'getDetailBahan']);
     Route::post('/update-bahan/{id}', [BahanController::class, 'updateBahan']);
     Route::delete('/delete-bahan/{id}', [BahanController::class, 'deleteBahan']);
+    Route::get('/bahan/{id}/batches', [BahanController::class, 'getBatches']);
+    Route::post('/bahan-masuk/{id}/resolve', [BahanController::class, 'resolveBatch']);
+    Route::get('/bahan/{id}/history', [BahanController::class, 'getHistory']); // Stok Card History
 
     // ---------------------------------------------------------
     // PENJUALAN / PRODUKSI (BARU DITAMBAHKAN)
     // ---------------------------------------------------------
     // 1. Endpoint untuk DataTables Laporan Produksi (GET /api/penjualan-produksi)
-    Route::get('/penjualan-produksi', [PenjualanController::class, 'produksiReport']);
-    // 2. Endpoint untuk menyimpan input produksi baru (POST /api/penjualan)
-    Route::post('/penjualan', [PenjualanController::class, 'store']);
+    Route::get('/penjualan-produksi/{batch_id}', [App\Http\Controllers\PenjualanController::class, 'batchDetails']); // Specific Route First
+    Route::get('/penjualan-produksi', [App\Http\Controllers\PenjualanController::class, 'produksiReport']);
+    Route::post('/penjualan', [App\Http\Controllers\PenjualanController::class, 'store']);
+    Route::delete('/penjualan-produksi/{batch_id}', [App\Http\Controllers\PenjualanController::class, 'destroy']); // Delete/Void Batch
 
     // ---------------------------------------------------------
     // MENU

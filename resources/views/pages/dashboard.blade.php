@@ -20,7 +20,9 @@
                     <h5 class="card-title">Grafik Penjualan Mingguan</h5>
 
                     <!-- Chart -->
-                    <canvas id="salesChart" style="max-height: 400px;"></canvas>
+                    <div style="position: relative; height: 350px; width: 100%">
+                        <canvas id="salesChart"></canvas>
+                    </div>
 
                     <script>
                         document.addEventListener("DOMContentLoaded", () => {
@@ -46,6 +48,7 @@
                                 },
                                 options: {
                                     responsive: true,
+                                    maintainAspectRatio: false, // Force height
                                     interaction: {
                                         mode: 'index',
                                         intersect: false,
@@ -93,10 +96,21 @@
 </section>
 
 {{-- SCRIPT PERINGATAN STOK KRITIS (Owner Only) --}}
-@if (Auth::user()->role === 'owner' && ($stokKritis->count() > 0 || $expiringItems->count() > 0))
+@if (Auth::user()->role === 'owner' && ($stokKritis->count() > 0 || $expiringItems->count() > 0 || (isset($expiredItems) && $expiredItems->count() > 0)))
 <script>
     document.addEventListener('DOMContentLoaded', function() {
         let htmlList = '';
+
+        @if(isset($expiredItems) && $expiredItems->count() > 0)
+            htmlList += '<p class="text-danger"><strong>SUDAH KADALUARSA (Expired):</strong></p><ul>';
+            @foreach($expiredItems as $item)
+                htmlList += `<li class="text-danger d-flex justify-content-between align-items-center">
+                    <span><strong>{{ $item->bahan->nama }}</strong> (Exp: {{ $item->expired->format('d M Y') }})</span>
+                    <a href="{{ route('bahan.index') }}?open_detail={{ $item->bahan_id }}" class="btn btn-sm btn-outline-danger ms-2" style="font-size: 0.7rem; padding: 2px 5px;">ATUR</a>
+                </li>`;
+            @endforeach
+            htmlList += '</ul><hr>';
+        @endif
 
         @if($stokKritis->count() > 0)
             htmlList += '<p><strong>Stok Kritis:</strong></p><ul>';
@@ -117,17 +131,53 @@
         htmlList += '<p>Mohon segera tindak lanjuti.</p>';
 
         // Tampilkan peringatan menggunakan SweetAlert
+        // Tampilkan peringatan menggunakan SweetAlert
         Swal.fire({
             title: 'Peringatan Stok!',
             icon: 'warning',
             html: htmlList,
             showCancelButton: true,
-            confirmButtonText: 'Lihat Daftar Bahan',
+            confirmButtonText: 'Buat Request Otomatis',
             cancelButtonText: 'Tutup',
+            confirmButtonColor: '#28a745', // Green for positive action
+            cancelButtonColor: '#6c757d',
         }).then((result) => {
             if (result.isConfirmed) {
-                // Arahkan ke halaman Bahan jika tombol diklik
-                window.location.href = '{{ route('bahan.index') }}';
+                // AJAX call to auto-request endpoint
+                Swal.fire({
+                    title: 'Memproses...',
+                    text: 'Sedang membuat request belanja...',
+                    allowOutsideClick: false,
+                    didOpen: () => {
+                        Swal.showLoading();
+                    }
+                });
+
+                fetch('{{ route('belanja.auto-request') }}', {
+                    method: 'POST',
+                    headers: {
+                        'X-CSRF-TOKEN': '{{ csrf_token() }}',
+                        'Content-Type': 'application/json'
+                    }
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        Swal.fire({
+                            title: 'Berhasil!',
+                            text: data.message,
+                            icon: 'success'
+                        }).then(() => {
+                            window.location.href = '{{ route('belanja.index') }}';
+                        });
+                    } else {
+                        Swal.fire('Gagal!', data.message, 'error');
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    Swal.fire('Error!', 'Terjadi kesalahan sistem.', 'error');
+                });
             }
         });
     });

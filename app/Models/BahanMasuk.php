@@ -17,6 +17,7 @@ class BahanMasuk extends Model
     protected $fillable = [
         'bahan_id',
         'jumlah',
+        'sisa_stok', // Added for FIFO
         'harga',
         'harga_satuan',
         'total_harga',

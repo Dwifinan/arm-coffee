@@ -15,8 +15,14 @@ class AppController extends Controller
 
     public function dashboardView(){
         // 1. Stok Kritis
+        // Filter: Exclude items that are already in a PENDING Belanja request
         $stokKritis = Bahan::whereNotNull('stok')
                           ->whereColumn('stok', '<=', 'stok_minimal')
+                          ->whereDoesntHave('belanjaDetails', function($query) {
+                                $query->whereHas('belanja', function($q) {
+                                    $q->where('status', 'pending');
+                                });
+                          })
                           ->get();
 
         // 2. Expiring Items (Next 2 Days)
@@ -30,6 +36,16 @@ class AppController extends Controller
                                 return $batch->bahan && $batch->bahan->stok > 0;
                             })
                             ->unique('bahan_id'); // Unique by Bahan
+        
+        // 3. Already Expired Items (Past Date, Still in Stock)
+        $expiredItems = BahanMasuk::with('bahan')
+                            ->where('is_resolved', false) // Filter resolved
+                            ->whereDate('expired', '<', Carbon::today())
+                            ->get()
+                            ->filter(function($batch) {
+                                return $batch->bahan && $batch->bahan->stok > 0;
+                            })
+                            ->unique('bahan_id');
 
         // 3. Setup Dates (Last 7 Days)
         $dates = [];
@@ -84,6 +100,7 @@ class AppController extends Controller
 
         return view('pages.dashboard', [
             'stokKritis' => $stokKritis,
+            'expiredItems' => $expiredItems,
             'expiringItems' => $expiringItems,
             'chartDates' => $dateLabels,
             'chartDatasets' => $datasets

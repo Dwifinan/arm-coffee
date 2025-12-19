@@ -30,18 +30,20 @@
     </div>
 
     <div class="card-body p-3">
-        <table id="menuTable" class="display table table-bordered" style="width: 100%">
-            <thead class="table-light">
-                <tr>
-                    <th>ID</th>
-                    <th>Nama</th>
-                    <th>Harga</th>
-                    <th>Tersedia</th>
-                    <th>Aksi</th>
-                </tr>
-            </thead>
-            <tbody></tbody>
-        </table>
+        <div class="table-responsive">
+            <table id="menuTable" class="display table table-bordered" style="width: 100%">
+                <thead class="table-light">
+                    <tr>
+                        <th>ID</th>
+                        <th>Nama</th>
+                        <th>Harga</th>
+                        <th>Tersedia</th>
+                        <th>Aksi</th>
+                    </tr>
+                </thead>
+                <tbody></tbody>
+            </table>
+        </div>
     </div>
 </div>
 
@@ -56,6 +58,7 @@ $(document).ready(function () {
     //  DATATABLE
     // ======================================
     let table = $('#menuTable').DataTable({
+        // responsive: true, // Dinonaktifkan agar scroll horizontal
         // FIX: Route ini sekarang menunjuk ke MenuController@getMenuData
         ajax: "{{ url('api/menu') }}",
         columns: [
