@@ -17,6 +17,7 @@ class Bahan extends Model
         'harga_persatuan',
         'jumlah_satuan',
         'stok_minimal',
+        'satuan_beli',
         'stok'
     ];
     // Catatan: 'harga_satuan' adalah kolom yang tersimpan (storedAs) dan tidak perlu di fillable.

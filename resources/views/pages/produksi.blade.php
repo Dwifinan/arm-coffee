@@ -271,6 +271,16 @@
                         options += `<option value="${menu.id}" data-harga="${menu.harga}">${menu.nama}</option>`;
                     });
                     $('#masterMenuSelect').html(options);
+
+                    // Sync to existing rows (Fix Race Condition)
+                    $('.menu-select').each(function() {
+                        let val = $(this).val();
+                        $(this).html(options);
+                        $(this).val(val).trigger('change'); // Trigger change for Select2 update
+                    });
+                },
+                error: function(xhr) {
+                    console.error("Failed to load menus");
                 }
             });
         }
@@ -303,6 +313,14 @@
             `;
             $('#produksiTableInput tbody').append(rowHtml);
             
+            // Initialize Select2 on the new element
+            $(`#row-${i} .menu-select`).select2({
+                dropdownParent: $('#addProduksiModal'),
+                theme: 'bootstrap-5',
+                width: '100%',
+                placeholder: "-- Pilih Menu --",
+            });
+
             // Trigger calculation for initial distinct value
             calculateRow(i);
         }

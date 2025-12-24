@@ -82,7 +82,6 @@
                     <label>Satuan <span class="text-danger">*</span></label>
                     <select name="satuan" id="selectSatuan" class="form-control" required>
                         <option value="">Pilih...</option>
-                        <option value="kg">kg</option>
                         <option value="gram">gram</option>
                         <option value="liter">liter</option>
                         <option value="ml">ml</option>
@@ -109,6 +108,13 @@
                     </div>
                 </div>
             </div>
+            <div class="row mb-3">
+            <div class="col-md-6">
+                    <label>Satuan Beli <span class="text-danger">*</span></label>
+                    <input type="text" min="0" name="satuan_beli" class="form-control" autocomplete="off" required>
+                </div>
+            </div>
+
 
         </form>
 
@@ -158,7 +164,6 @@
                     <label>Satuan <span class="text-danger">*</span></label>
                     <select name="satuan" id="edit_satuan" class="form-control" required>
                         <option value="">Pilih...</option>
-                        <option value="kg">kg</option>
                         <option value="gram">gram</option>
                         <option value="liter">liter</option>
                         <option value="ml">ml</option>
@@ -185,6 +190,13 @@
                     </div>
                 </div>
             </div>
+            <div class="row mb-3">
+                <div class="col-md-6">
+                    <label>Satuan Beli <span class="text-danger">*</span></label>
+                    <input type="text" min="0" name="satuan_beli" id="edit_satuan_beli" class="form-control" autocomplete="off" required>
+                </div>
+            </div>
+
 
         </form>
       </div>
@@ -211,7 +223,7 @@
       </div>
 
       <div class="modal-body">
-        
+
         <ul class="nav nav-tabs mb-3" id="detailTabs" role="tablist">
             <li class="nav-item" role="presentation">
                 <button class="nav-link active" id="fefo-tab" data-bs-toggle="tab" data-bs-target="#fefo" type="button" role="tab">Batch & Expiry (FEFO)</button>
@@ -327,7 +339,7 @@ $(document).ready(function () {
             { data: "kode" },
             { data: "nama" },
             { data: "satuan" },
-            { 
+            {
                 data: "harga_persatuan",
                 render: function(data, type, row) {
                     let price = parseInt(data) || 0;
@@ -359,7 +371,7 @@ $(document).ready(function () {
             // --- AUTO OPEN FROM URL PARAM (MOVED HERE FOR ROBUSTNESS) ---
             const urlParams = new URLSearchParams(window.location.search);
             const openDetailId = urlParams.get('open_detail');
-            
+
             if (openDetailId) {
                 // 1. Filter table to show ONLY this specific ID (column 0 is hidden ID)
                 //    This ensures the row is present in the DOM even if it was on page 2
@@ -370,7 +382,7 @@ $(document).ready(function () {
                     let btn = $(`.btnDetail[data-id='${openDetailId}']`);
                     if (btn.length) {
                         btn.click();
-                        
+
                         // Clean URL so refresh doesn't trigger it again
                         const newUrl = window.location.pathname;
                         window.history.replaceState({}, document.title, newUrl);
@@ -422,6 +434,7 @@ $(document).ready(function () {
             $('#edit_harga').val(res.data.harga_persatuan);
             $('#edit_jumlah_per').val(res.data.jumlah_satuan);
             $('#edit_labelSatuan').text(res.data.satuan);
+            $('#edit_satuan_beli').val(res.data.satuan_beli);
 
             $('#modalEditBahan').modal('show');
         });
@@ -492,7 +505,7 @@ $(document).ready(function () {
         let id = $(this).data('id');
         $('#bodyBatch').html('<tr><td colspan="5" class="text-center">Loading Riwayat...</td></tr>');
         $('#bodyFefo').html('<tr><td colspan="6" class="text-center">Loading Batch...</td></tr>');
-        
+
         $('#modalDetailBatch .modal-title').text('Detail & Validasi Stok (FEFO)');
         $('#modalDetailBatch').modal('show');
 
@@ -533,14 +546,14 @@ $(document).ready(function () {
                 res.data.forEach(batch => {
                     let dMasuk = new Date(batch.created_at);
                     let tglMasuk = dMasuk.toLocaleDateString('id-ID', {day: 'numeric', month: 'short', year: '2-digit'});
-                    
+
                     let dExp = new Date(batch.expired);
                     let tglExp = dExp.toLocaleDateString('id-ID', {day: 'numeric', month: 'short', year: 'numeric'});
-                    
+
                     // Logic Status
                     let isExpired = dExp < today;
                     let isEmpty = batch.sisa_stok <= 0;
-                    
+
                     let statusBadge = '';
                     let rowClass = '';
 
@@ -553,7 +566,7 @@ $(document).ready(function () {
                     } else {
                         // Cek Near Expired (3 days)
                         let diffTime = dExp - today;
-                        let diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)); 
+                        let diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
                         if (diffDays <= 3 && diffDays >= 0) {
                             statusBadge = '<span class="badge bg-warning text-dark">Hampir Expired (' + diffDays + ' hr)</span>';
                             rowClass = 'table-warning';
@@ -587,7 +600,7 @@ $(document).ready(function () {
     $(document).on('click', '.btnResolve', function() {
         let batchId = $(this).data('id');
         let currentStock = $(this).data('stok'); // Optional: show max logic
-        
+
         Swal.fire({
             title: 'Atur Barang Expired',
             html: `
@@ -621,9 +634,9 @@ $(document).ready(function () {
                 $.ajax({
                     url: "{{ url('api/bahan-masuk') }}/" + batchId + "/resolve",
                     method: 'POST',
-                    data: { 
+                    data: {
                         _token: "{{ csrf_token() }}",
-                        qty_disposed: qty 
+                        qty_disposed: qty
                     },
                     success: function(res) {
                         Swal.fire('Berhasil', 'Status expired telah diselesaikan.', 'success');

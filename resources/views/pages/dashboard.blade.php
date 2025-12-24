@@ -13,85 +13,122 @@
 
 <section class="section dashboard">
     <div class="row">
-
+        {{-- Weekly Sales Chart --}}
         <div class="col-lg-12">
             <div class="card">
                 <div class="card-body">
-                    <h5 class="card-title">Grafik Penjualan Mingguan</h5>
-
-                    <!-- Chart -->
+                    <h5 class="card-title">Grafik Penjualan Mingguan (Top 5+Lainnya)</h5>
                     <div style="position: relative; height: 350px; width: 100%">
                         <canvas id="salesChart"></canvas>
                     </div>
+                </div>
+            </div>
+        </div>
 
-                    <script>
-                        document.addEventListener("DOMContentLoaded", () => {
-                            // Cek apakah Chart.js tersedia sebelum mencoba menggunakannya
-                            if (typeof Chart === 'undefined') {
-                                console.error("Chart.js library not found. Please ensure it is loaded.");
-                                return;
-                            }
-
-                            const ctx = document.querySelector('#salesChart');
-                            if (!ctx) return;
-
-                            // Data penjualan (contoh data dummy)
-                            // Data dari controller
-                            const datasets = @json($chartDatasets);
-                            const days = @json($chartDates);
-
-                            new Chart(ctx, {
-                                type: 'bar',
-                                data: {
-                                    labels: days,
-                                    datasets: datasets
-                                },
-                                options: {
-                                    responsive: true,
-                                    maintainAspectRatio: false, // Force height
-                                    interaction: {
-                                        mode: 'index',
-                                        intersect: false,
-                                    },
-                                    plugins: {
-                                        legend: {
-                                            position: 'top',
-                                        },
-                                        title: {
-                                            display: true,
-                                            text: 'Statistik Penjualan Per Menu (1 Minggu Terakhir)'
-                                        },
-                                        tooltip: {
-                                            callbacks: {
-                                                footer: function(tooltipItems) {
-                                                    let total = 0;
-                                                    tooltipItems.forEach(function(tooltipItem) {
-                                                        total += tooltipItem.parsed.y;
-                                                    });
-                                                    return 'Total: ' + total;
-                                                }
-                                            }
-                                        }
-                                    },
-                                    scales: {
-                                        x: {
-                                            stacked: true,
-                                        },
-                                        y: {
-                                            stacked: true,
-                                            beginAtZero: true
-                                        }
-                                    }
-                                }
-                            });
-                        });
-                    </script>
-                    <!-- End Chart -->
-
+        {{-- Trend Chart --}}
+        <div class="col-lg-12">
+            <div class="card">
+                <div class="card-body">
+                    <h5 class="card-title">Tren Penjualan Harian (Naik/Turun)</h5>
+                    <div style="position: relative; height: 350px; width: 100%">
+                        <canvas id="trendChart"></canvas>
+                    </div>
                 </div>
             </div>
         </div>
     </div>
+
+    <script>
+        document.addEventListener("DOMContentLoaded", () => {
+            if (typeof Chart === 'undefined') {
+                console.error("Chart.js library not found.");
+                return;
+            }
+
+            const days = @json($chartDates);
+
+            // 1. Weekly Sales Chart
+            const ctxSales = document.querySelector('#salesChart');
+            if (ctxSales) {
+                const datasets = @json($chartDatasets);
+                new Chart(ctxSales, {
+                    type: 'bar',
+                    data: {
+                        labels: days,
+                        datasets: datasets
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        interaction: {
+                            mode: 'index',
+                            intersect: false,
+                        },
+                        plugins: {
+                            legend: {
+                                position: 'bottom',
+                                labels: {
+                                    usePointStyle: true,
+                                    padding: 20
+                                }
+                            },
+                            tooltip: {
+                                callbacks: {
+                                    footer: function(tooltipItems) {
+                                        let total = 0;
+                                        tooltipItems.forEach(function(tooltipItem) {
+                                            total += tooltipItem.parsed.y;
+                                        });
+                                        return 'Total Harian: ' + total;
+                                    }
+                                }
+                            }
+                        },
+                        scales: {
+                            x: { stacked: true, grid: { display: false } },
+                            y: { stacked: true, beginAtZero: true, ticks: { precision: 0 } }
+                        }
+                    }
+                });
+            }
+
+            // 2. Trend Chart
+            const ctxTrend = document.querySelector('#trendChart');
+            if (ctxTrend) {
+                const dailyTotals = @json($chartDailyTotals);
+                new Chart(ctxTrend, {
+                    type: 'line',
+                    data: {
+                        labels: days,
+                        datasets: [{
+                            label: 'Total Penjualan',
+                            data: dailyTotals,
+                            borderColor: '#4e73df',
+                            backgroundColor: 'rgba(78, 115, 223, 0.1)',
+                            borderWidth: 3,
+                            fill: true,
+                            tension: 0.4,
+                            pointRadius: 4,
+                            pointHoverRadius: 6,
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: { display: false },
+                            title: { display: false }
+                        },
+                        scales: {
+                            y: { beginAtZero: true, ticks: { precision: 0 } },
+                            x: { grid: { display: false } }
+                        }
+                    }
+                });
+            }
+        });
+    </script>
+
 
     {{-- New Cards Row --}}
     <div class="row mt-4">

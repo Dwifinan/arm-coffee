@@ -29,6 +29,7 @@ public function getBahan()
             "satuan" => "required|string|max:50",
             "harga_persatuan" => "required|numeric|min:0",
             "jumlah_satuan" => "required|numeric|min:1",
+            "satuan_beli" => "required|string|max:50",
             "stok_minimal" => "required|integer|min:0",
         ]);
 
@@ -78,6 +79,7 @@ public function getBahan()
             "satuan" => "required|string|max:50",
             "harga_persatuan" => "required|numeric|min:0",
             "jumlah_satuan" => "required|numeric|min:1",
+            "satuan_beli" => "required|string|max:50",
             "stok_minimal" => "required|integer|min:0",
         ]);
 
@@ -126,12 +128,14 @@ public function getBahan()
             "kode" => "required|string|max:50|unique:bahan,kode",
             "nama" => "required|string|max:50",
             "satuan" => "required|string|max:50",
+            "satuan_beli" => "required|string|max:50",
             "low_limit" => "required|integer|min:0",
         ], [
             "kode.required" => "Kode Bahan Harus Di Isi",
             "kode.unique" => "Kode Bahan sudah ada. Gunakan kode lain.",
             "nama.required" => "Nama Bahan Harus Di Isi",
             "satuan.required" => "Satuan Bahan Harus Di Isi",
+            "satuan_beli.required" => "Satuan Beli Harus Di Isi",
             "low_limit.required" => "Minimal stok Bahan Harus Di Isi",
             "low_limit.numeric" => "Minimal stok harus berupa angka.",
         ]);
@@ -169,12 +173,14 @@ public function getBahan()
             ],
             "nama" => "required|string|max:50",
             "satuan" => "required|string|max:50",
+            "satuan_beli" => "required|string|max:50",
             "low_limit" => "required|integer|min:0",
         ], [
             "kode.required" => "Kode Bahan Harus Di Isi",
             "kode.unique" => "Kode Bahan sudah ada. Gunakan kode lain.",
             "nama.required" => "Nama Bahan Harus Di Isi",
             "satuan.required" => "Satuan Bahan Harus Di Isi",
+            "satuan_beli.required" => "Satuan Beli Harus Di Isi",
             "low_limit.required" => "Minimal stok Bahan Harus Di Isi",
             "low_limit.numeric" => "Minimal stok harus berupa angka.",
         ]);
@@ -221,7 +227,7 @@ public function getBahan()
         $batches = \App\Models\BahanMasuk::where('bahan_id', $id)
                     ->orderBy('expired', 'asc')
                     ->get();
-        
+
         return response()->json([
             'message' => 'success',
             'data' => $batches
