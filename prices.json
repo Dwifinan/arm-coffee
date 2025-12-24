@@ -1,0 +1,290 @@
+[
+    {
+        "nama": "Biji Kopi Arabica",
+        "harga_persatuan": 250000,
+        "jumlah_satuan": 1000,
+        "satuan": "gram"
+    },
+    {
+        "nama": "Bubuk Kopi",
+        "harga_persatuan": 60000,
+        "jumlah_satuan": 1000,
+        "satuan": "gram"
+    },
+    {
+        "nama": "Gula Pasir",
+        "harga_persatuan": 18000,
+        "jumlah_satuan": 1000,
+        "satuan": "gram"
+    },
+    {
+        "nama": "Gula Aren",
+        "harga_persatuan": 35000,
+        "jumlah_satuan": 1000,
+        "satuan": "gram"
+    },
+    {
+        "nama": "Susu Kental Manis",
+        "harga_persatuan": 12500,
+        "jumlah_satuan": 370,
+        "satuan": "ml"
+    },
+    {
+        "nama": "Susu Cair Full Cream",
+        "harga_persatuan": 19000,
+        "jumlah_satuan": 1000,
+        "satuan": "ml"
+    },
+    {
+        "nama": "Krimer Bubuk",
+        "harga_persatuan": 35000,
+        "jumlah_satuan": 1000,
+        "satuan": "gram"
+    },
+    {
+        "nama": "Air Mineral",
+        "harga_persatuan": 20000,
+        "jumlah_satuan": 19000,
+        "satuan": "ml"
+    },
+    {
+        "nama": "Es Batu",
+        "harga_persatuan": 10000,
+        "jumlah_satuan": 10000,
+        "satuan": "gram"
+    },
+    {
+        "nama": "Bubuk Cokelat",
+        "harga_persatuan": 65000,
+        "jumlah_satuan": 1000,
+        "satuan": "gram"
+    },
+    {
+        "nama": "Bubuk Matcha",
+        "harga_persatuan": 75000,
+        "jumlah_satuan": 1000,
+        "satuan": "gram"
+    },
+    {
+        "nama": "Bubuk Milo",
+        "harga_persatuan": 65000,
+        "jumlah_satuan": 1000,
+        "satuan": "gram"
+    },
+    {
+        "nama": "Oreo",
+        "harga_persatuan": 1000,
+        "jumlah_satuan": 1,
+        "satuan": "pcs"
+    },
+    {
+        "nama": "Bubuk Red Velvet",
+        "harga_persatuan": 70000,
+        "jumlah_satuan": 1000,
+        "satuan": "gram"
+    },
+    {
+        "nama": "Sirup Vanilla",
+        "harga_persatuan": 45000,
+        "jumlah_satuan": 750,
+        "satuan": "ml"
+    },
+    {
+        "nama": "Sirup Caramel",
+        "harga_persatuan": 90000,
+        "jumlah_satuan": 750,
+        "satuan": "ml"
+    },
+    {
+        "nama": "Sirup Mangga",
+        "harga_persatuan": 90000,
+        "jumlah_satuan": 750,
+        "satuan": "ml"
+    },
+    {
+        "nama": "Mangga Segar",
+        "harga_persatuan": 30,
+        "jumlah_satuan": 1,
+        "satuan": "gram"
+    },
+    {
+        "nama": "Jahe Segar",
+        "harga_persatuan": 25,
+        "jumlah_satuan": 1,
+        "satuan": "gram"
+    },
+    {
+        "nama": "Kulit Dimsum",
+        "harga_persatuan": 200,
+        "jumlah_satuan": 1,
+        "satuan": "lembar"
+    },
+    {
+        "nama": "Daging Ayam Giling",
+        "harga_persatuan": 45000,
+        "jumlah_satuan": 1000,
+        "satuan": "gram"
+    },
+    {
+        "nama": "Wortel",
+        "harga_persatuan": 15000,
+        "jumlah_satuan": 1000,
+        "satuan": "gram"
+    },
+    {
+        "nama": "Tepung Tapioka",
+        "harga_persatuan": 14000,
+        "jumlah_satuan": 1000,
+        "satuan": "gram"
+    },
+    {
+        "nama": "Otak-otak Ikan",
+        "harga_persatuan": 1500,
+        "jumlah_satuan": 1,
+        "satuan": "pcs"
+    },
+    {
+        "nama": "Sosis",
+        "harga_persatuan": 2000,
+        "jumlah_satuan": 1,
+        "satuan": "pcs"
+    },
+    {
+        "nama": "Bakso",
+        "harga_persatuan": 1000,
+        "jumlah_satuan": 1,
+        "satuan": "pcs"
+    },
+    {
+        "nama": "Nugget",
+        "harga_persatuan": 1500,
+        "jumlah_satuan": 1,
+        "satuan": "pcs"
+    },
+    {
+        "nama": "Mie Instan",
+        "harga_persatuan": 3500,
+        "jumlah_satuan": 1,
+        "satuan": "pcs"
+    },
+    {
+        "nama": "Telur Ayam",
+        "harga_persatuan": 58000,
+        "jumlah_satuan": 30,
+        "satuan": "pcs"
+    },
+    {
+        "nama": "Sawi",
+        "harga_persatuan": 12000,
+        "jumlah_satuan": 1000,
+        "satuan": "gram"
+    },
+    {
+        "nama": "Kol",
+        "harga_persatuan": 10000,
+        "jumlah_satuan": 1000,
+        "satuan": "gram"
+    },
+    {
+        "nama": "Daun Bawang",
+        "harga_persatuan": 35000,
+        "jumlah_satuan": 1000,
+        "satuan": "gram"
+    },
+    {
+        "nama": "Bawang Putih",
+        "harga_persatuan": 35000,
+        "jumlah_satuan": 1000,
+        "satuan": "gram"
+    },
+    {
+        "nama": "Bawang Merah",
+        "harga_persatuan": 35000,
+        "jumlah_satuan": 1000,
+        "satuan": "gram"
+    },
+    {
+        "nama": "Cabai Kering",
+        "harga_persatuan": 40000,
+        "jumlah_satuan": 1000,
+        "satuan": "gram"
+    },
+    {
+        "nama": "Cabai Fresh",
+        "harga_persatuan": 40000,
+        "jumlah_satuan": 1000,
+        "satuan": "gram"
+    },
+    {
+        "nama": "Biji Wijen",
+        "harga_persatuan": 100,
+        "jumlah_satuan": 1,
+        "satuan": "gram"
+    },
+    {
+        "nama": "Minyak Goreng",
+        "harga_persatuan": 12000,
+        "jumlah_satuan": 1000,
+        "satuan": "ml"
+    },
+    {
+        "nama": "Garam",
+        "harga_persatuan": 5000,
+        "jumlah_satuan": 250,
+        "satuan": "gram"
+    },
+    {
+        "nama": "Merica",
+        "harga_persatuan": 150,
+        "jumlah_satuan": 1,
+        "satuan": "gram"
+    },
+    {
+        "nama": "Penyedap Rasa",
+        "harga_persatuan": 20,
+        "jumlah_satuan": 1,
+        "satuan": "gram"
+    },
+    {
+        "nama": "Kecap Manis",
+        "harga_persatuan": 18000,
+        "jumlah_satuan": 550,
+        "satuan": "ml"
+    },
+    {
+        "nama": "Saus Tiram",
+        "harga_persatuan": 22000,
+        "jumlah_satuan": 1000,
+        "satuan": "ml"
+    },
+    {
+        "nama": "Saus Sambal",
+        "harga_persatuan": 22000,
+        "jumlah_satuan": 1000,
+        "satuan": "ml"
+    },
+    {
+        "nama": "Saus Tomat",
+        "harga_persatuan": 22000,
+        "jumlah_satuan": 1000,
+        "satuan": "ml"
+    },
+    {
+        "nama": "Extra Joss",
+        "harga_persatuan": 12000,
+        "jumlah_satuan": 12,
+        "satuan": "pcs"
+    },
+    {
+        "nama": "Gula Aren Cair",
+        "harga_persatuan": 35000,
+        "jumlah_satuan": 1000,
+        "satuan": "ml"
+    },
+    {
+        "nama": "Gula Cair (Simple Syrup)",
+        "harga_persatuan": 20000,
+        "jumlah_satuan": 1000,
+        "satuan": "ml"
+    }
+]

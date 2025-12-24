@@ -34,35 +34,48 @@ class SaturdayPresentationSeeder extends Seeder
         $bahans = Bahan::all();
         foreach ($bahans as $b) {
             // SCENARIO CHECK
-            $isArabica = str_contains($b->nama, 'Arabica');
             $isTelur = str_contains($b->nama, 'Telur');
             $isSusu = str_contains($b->nama, 'Susu') && str_contains($b->nama, 'Full');
+
+            // Critical Candidates
+            $criticalKeywords = ['Arabica', 'Bubuk Cokelat', 'Sirup Vanilla', 'Oreo', 'Gula Aren'];
+            $isCritical = false;
+            foreach ($criticalKeywords as $keyword) {
+                if (str_contains($b->nama, $keyword)) {
+                    $isCritical = true;
+                    break;
+                }
+            }
 
             $targetStock = 0;
             $batchData = [];
 
-            if ($isArabica) {
-                // Scenario Critical
-                $b->update(['stok_minimal' => 1000]);
-                $targetStock = 200; // Critical
+            if ($isCritical) {
+                // Scenario Critical: Set stock to 20% of min stock (or hardcoded low value)
+                // Ensure Min Stock is reasonable first
+                $currentMin = $b->stok_minimal > 0 ? $b->stok_minimal : 1000;
+                $b->update(['stok_minimal' => $currentMin]); // Ensure encoded
+
+                $targetStock = floor($currentMin * 0.2); // 20% of minimum
+                if ($targetStock <= 0) $targetStock = 1;
                 
-                // Create 1 Batch for 200g
+                // Create 1 Batch
                 $batchData[] = [
-                    'jumlah' => 200,
+                    'jumlah' => $targetStock,
                     'expired' => Carbon::now()->addMonths(6), // Safe expiry
                 ];
-                $this->command->info("Scenario Critical: Arabica set to 200g.");
+                $this->command->info("Scenario Critical: {$b->nama} set to {$targetStock} (Min: {$currentMin}).");
 
             } elseif ($isTelur) {
                 // Scenario Expired
                 // 30 expired, 20 safe. Total 50.
                 $targetStock = 50; 
                 
-                // Batch 1: Expired (30)
+                // Batch 1: Expired (30) - 3 Days Ago
                 $batchData[] = [
                     'jumlah' => 30,
-                    'expired' => Carbon::create(2025, 12, 20), // Expired
-                    'created_at' => Carbon::now()->subDays(5)
+                    'expired' => Carbon::now()->subDays(3), // Expired 3 days ago
+                    'created_at' => Carbon::now()->subDays(10)
                 ];
                 
                 // Batch 2: Safe (20)
@@ -77,10 +90,10 @@ class SaturdayPresentationSeeder extends Seeder
                 // 5000ml near expired, 5000ml safe. Total 10000.
                 $targetStock = 10000;
 
-                // Batch 1: Near Expired (5000)
+                // Batch 1: Near Expired (5000) - Expiring in 3 Days
                 $batchData[] = [
                     'jumlah' => 5000,
-                    'expired' => Carbon::create(2025, 12, 23), // Near Expired
+                    'expired' => Carbon::now()->addDays(3), // Near Expired (in 3 days)
                     'created_at' => Carbon::now()->subDays(2)
                 ];
 
@@ -127,11 +140,11 @@ class SaturdayPresentationSeeder extends Seeder
 
 
         // 4. SALES DATA (Chart Fill)
-        // Generate from Dec 14 to Dec 21
+        // Generate from 10 days ago until Today
         $menus = Menu::all();
-        $startDate = Carbon::create(2025, 12, 14);
+        $startDate = Carbon::now()->subDays(10);
         
-        for ($i = 0; $i <= 7; $i++) {
+        for ($i = 0; $i <= 10; $i++) {
             $currentDate = $startDate->copy()->addDays($i);
             // Random transactions per day (10-20)
             $transCount = rand(10, 20);

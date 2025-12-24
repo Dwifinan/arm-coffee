@@ -91,13 +91,90 @@
                 </div>
             </div>
         </div>
-
     </div>
-</section>
 
-{{-- SCRIPT PERINGATAN STOK KRITIS (Owner Only) --}}
-@if (Auth::user()->role === 'owner' && ($stokKritis->count() > 0 || $expiringItems->count() > 0 || (isset($expiredItems) && $expiredItems->count() > 0)))
-<script>
+    {{-- New Cards Row --}}
+    <div class="row mt-4">
+        {{-- Best Selling Menu Card --}}
+        <div class="col-lg-6">
+            <div class="card h-100">
+                <div class="card-body">
+                    <h5 class="card-title">Menu Terlaris (7 Hari Terakhir)</h5>
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead>
+                                <tr>
+                                    <th scope="col">#</th>
+                                    <th scope="col">Menu</th>
+                                    <th scope="col" class="text-center">Terjual</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @forelse($bestSelling as $index => $item)
+                                    <tr>
+                                        <th scope="row">{{ $index + 1 }}</th>
+                                        <td>{{ $item->menu->nama ?? 'Unknown' }}</td>
+                                        <td class="text-center"><span class="badge bg-success">{{ $item->total_sold }}</span></td>
+                                    </tr>
+                                @empty
+                                    <tr>
+                                        <td colspan="3" class="text-center text-muted">Belum ada penjualan minggu ini.</td>
+                                    </tr>
+                                @endforelse
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        {{-- (Owner Only) --}}
+        @if (Auth::user()->role === 'owner' && ($stokKritis->count() > 0 || $expiringItems->count() > 0 || (isset($expiredItems) && $expiredItems->count() > 0)))
+        {{-- Critical Stock Card --}}
+        <div class="col-lg-6">
+            <div class="card h-100">
+                <div class="card-body">
+                    <h5 class="card-title">Stok Kritis <span class="badge bg-danger">{{ $stokKritis->count() }} Item</span></h5>
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead>
+                                <tr>
+                                    <th scope="col">Bahan</th>
+                                    <th scope="col" class="text-center">Stok</th>
+                                    <th scope="col" class="text-center">Min</th>
+                                    <th scope="col" class="text-end">Aksi</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @forelse($stokKritis->take(5) as $item)
+                                    <tr>
+                                        <td><span class="text-danger fw-bold">{{ $item->nama }}</span></td>
+                                        <td class="text-center">{{ $item->stok }} {{ $item->satuan }}</td>
+                                        <td class="text-center">{{ $item->stok_minimal }} {{ $item->satuan }}</td>
+                                        <td class="text-end">
+                                             <a href="{{ route('belanja.create') }}" class="btn btn-sm btn-outline-primary">Belanja</a>
+                                        </td>
+                                    </tr>
+                                @empty
+                                    <tr>
+                                        <td colspan="4" class="text-center text-success">Stok aman. Tidak ada stok kritis.</td>
+                                    </tr>
+                                @endforelse
+                            </tbody>
+                        </table>
+                        @if($stokKritis->count() > 5)
+                            <div class="text-center mt-2">
+                                <a href="{{ route('bahan.index') }}" class="small">Lihat Semua stok kritis...</a>
+                            </div>
+                        @endif
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+       
+       
+       <script>
     document.addEventListener('DOMContentLoaded', function() {
         let htmlList = '';
 
@@ -121,9 +198,12 @@
         @endif
 
         @if($expiringItems->count() > 0)
-            htmlList += '<hr><p><strong>Mendekati Expired (2 Hari):</strong></p><ul>';
+            htmlList += '<hr><p><strong>Mendekati Expired (7 Hari):</strong></p><ul>';
             @foreach($expiringItems as $item)
-                htmlList += `<li><strong>{{ $item->bahan->nama }}</strong> (Exp: {{ $item->expired->format('d M Y') }})</li>`;
+                @php
+                    $daysLeft = \Carbon\Carbon::now()->startOfDay()->diffInDays($item->expired->startOfDay(), false);
+                @endphp
+                htmlList += `<li><strong>{{ $item->bahan->nama }}</strong> (Exp: {{ $item->expired->format('d M Y') }} - {{ $daysLeft }} hari lagi)</li>`;
             @endforeach
             htmlList += '</ul>';
         @endif

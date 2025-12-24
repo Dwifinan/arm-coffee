@@ -42,7 +42,7 @@ class AngkringanSeeder extends Seeder
             ['nama' => 'Krimer Bubuk', 'satuan' => 'gram', 'harga_satuan' => 50, 'stok' => 3000, 'stok_minimal' => 500],
             // Cairan & Es
             ['nama' => 'Air Mineral', 'satuan' => 'ml', 'harga_satuan' => 5, 'stok' => 50000, 'stok_minimal' => 10000], 
-            ['nama' => 'Es Batu', 'satuan' => 'kg', 'harga_satuan' => 2000, 'stok' => 50, 'stok_minimal' => 10],
+            ['nama' => 'Es Batu', 'satuan' => 'gram', 'harga_satuan' => 2000, 'stok' => 50, 'stok_minimal' => 10],
             // Rasa Bubuk
             ['nama' => 'Bubuk Cokelat', 'satuan' => 'gram', 'harga_satuan' => 80, 'stok' => 2000, 'stok_minimal' => 500],
             ['nama' => 'Bubuk Matcha', 'satuan' => 'gram', 'harga_satuan' => 150, 'stok' => 2000, 'stok_minimal' => 500],

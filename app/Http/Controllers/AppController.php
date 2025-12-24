@@ -25,11 +25,11 @@ class AppController extends Controller
                           })
                           ->get();
 
-        // 2. Expiring Items (Next 2 Days)
+        // 2. Expiring Items (Next 7 Days, excluding today)
         // Check History of Incoming Items that are expiring soon AND whose Bahan still has stock
         $expiringItems = BahanMasuk::with('bahan')
-                            ->whereDate('expired', '>=', Carbon::today())
-                            ->whereDate('expired', '<=', Carbon::today()->addDays(2))
+                            ->whereDate('expired', '>', Carbon::today())
+                            ->whereDate('expired', '<=', Carbon::today()->addDays(7))
                             ->get()
                             ->filter(function($batch) {
                                 // Only alert if the Bahan itself still has stock > 0
@@ -37,10 +37,10 @@ class AppController extends Controller
                             })
                             ->unique('bahan_id'); // Unique by Bahan
         
-        // 3. Already Expired Items (Past Date, Still in Stock)
+        // 3. Already Expired Items (Past Date + Today, Still in Stock)
         $expiredItems = BahanMasuk::with('bahan')
                             ->where('is_resolved', false) // Filter resolved
-                            ->whereDate('expired', '<', Carbon::today())
+                            ->whereDate('expired', '<=', Carbon::today())
                             ->get()
                             ->filter(function($batch) {
                                 return $batch->bahan && $batch->bahan->stok > 0;
@@ -98,12 +98,24 @@ class AppController extends Controller
             ];
         }
 
+        // 7. Best Selling Menu (Last 7 Days - Matching Chart)
+        // User Request: "menu terlaris untuk minggu ini saja berarti 7 hari ke belakang sama dengan data chart"
+        
+        $bestSelling = Penjualan::with('menu')
+                        ->where('created_at', '>=', $startDate) // Use same start date as chart
+                        ->select('menu_id', DB::raw('SUM(jumlah) as total_sold'))
+                        ->groupBy('menu_id')
+                        ->orderByDesc('total_sold')
+                        ->take(5)
+                        ->get();
+
         return view('pages.dashboard', [
             'stokKritis' => $stokKritis,
             'expiredItems' => $expiredItems,
             'expiringItems' => $expiringItems,
             'chartDates' => $dateLabels,
-            'chartDatasets' => $datasets
+            'chartDatasets' => $datasets,
+            'bestSelling' => $bestSelling
         ]);
     }
 
